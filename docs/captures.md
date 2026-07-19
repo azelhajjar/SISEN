@@ -12,12 +12,6 @@ Capture commands are intended for the controlled SISEN lab environment only. Do 
 
 ## Before Capturing
 
-Create the capture folder from the repository root:
-
-```bash
-mkdir -p captures
-```
-
 Inspect active namespace interfaces:
 
 ```bash

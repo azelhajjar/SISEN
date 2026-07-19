@@ -158,11 +158,8 @@ If the dashboard loads but shows stale or missing data:
 
 ## Capture Issues
 
-Create the capture folder first:
-
-```bash
-mkdir -p captures
-```
+The `captures/` folder is included in the repository. If a capture command
+fails, first confirm that the command is being run from the repository root.
 
 If tcpdump says an interface does not exist, inspect the current interfaces:
 

@@ -6,6 +6,9 @@ The Medical IoT scenario demonstrates how patient vital-sign telemetry can becom
 
 Students observe simulated patient wearables, a BLE-to-Wi-Fi gateway path, MQTT telemetry, and the dashboard.
 
+Use this guide with the lab worksheet provided in `teaching-materials/labs/`.
+The worksheet contains the activity questions and safety/hazard analysis prompts.
+
 ## Scenario Overview
 
 The scenario simulates patient wearables and a Medical IoT gateway. The wearables are represented as simulated BLE sources. The gateway is the Wi-Fi station associated with the HWSIM AP and forwards patient telemetry toward MQTT and the dashboard.
@@ -152,15 +155,6 @@ Capture MQTT patient telemetry:
 ```bash
 sudo tcpdump -i any -n -vv -s 0 -Z "$USER" -w captures/medical-mqtt-patient-vitals.pcap port 1883
 ```
-
-## Safety Discussion
-
-Use the scenario to discuss questions such as:
-
-- Could accepting a false vital-sign value cause a wrong clinical decision?
-- How should the system respond to malformed but accepted telemetry?
-- What is the safety impact of replayed patient data that looks current?
-- What checks could distinguish patient deterioration from a telemetry attack?
 
 ## Stop And Cleanup
 

@@ -6,6 +6,9 @@ The 6LoWPAN Industrial IoT scenario demonstrates telemetry security effects acro
 
 The scenario focuses on controlled telemetry attacks and communication-path observation. Do not describe these activities as RPL attacks unless a separate RPL activity is explicitly introduced.
 
+Use this guide with the lab worksheet provided in `teaching-materials/labs/`.
+The worksheet contains the activity questions and safety/hazard analysis prompts.
+
 ## Scenario Overview
 
 The scenario creates a Linux-native 6LoWPAN topology with sensor-side and border-router namespaces. Telemetry flows from the low-power side through a border path and into MQTT/dashboard topics.
@@ -139,15 +142,6 @@ Capture MQTT relay/dashboard-path evidence:
 ```bash
 sudo tcpdump -i any -n -vv -s 0 -Z "$USER" -w captures/6lowpan-mqtt-dashboard.pcap port 1883
 ```
-
-## Safety Discussion
-
-Use the scenario to discuss questions such as:
-
-- What safety decisions depend on low-power telemetry arriving correctly?
-- Could spoofed, missing, extreme, or replayed telemetry affect operator judgement?
-- Which capture point shows the attack closest to the low-power network?
-- Which capture point shows the impact after forwarding and MQTT translation?
 
 ## Stop And Cleanup
 

@@ -6,6 +6,9 @@ The Smart Building scenario demonstrates how building telemetry and automation c
 
 Students observe environmental and occupancy telemetry, inspect the wireless and MQTT paths, and run bounded attacks against the simulated building environment.
 
+Use this guide with the lab worksheet provided in `teaching-materials/labs/`.
+The worksheet contains the activity questions and safety/hazard analysis prompts.
+
 ## Scenario Overview
 
 The scenario creates a HWSIM wireless access point and a configurable number of simulated building sensor nodes. Each node runs in a Linux namespace and publishes telemetry through MQTT to the dashboard.
@@ -150,15 +153,6 @@ Capture MQTT telemetry and attack impact:
 ```bash
 sudo tcpdump -i any -n -vv -s 0 -Z "$USER" -w captures/smart-building-mqtt-building.pcap port 1883
 ```
-
-## Safety Discussion
-
-Use the scenario to discuss questions such as:
-
-- Can the system detect that a correctly formatted value is implausible or unsafe?
-- Could spoofed occupancy, air quality, fire, smoke, or gas data cause an unsafe response?
-- What is the difference between detecting a network attack and detecting unsafe operational state?
-- Which controls would reduce unsafe decisions caused by false telemetry?
 
 ## Stop And Cleanup
 

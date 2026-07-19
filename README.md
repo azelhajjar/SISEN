@@ -161,6 +161,9 @@ captures/
 
 ## Documentation
 
+The project website, [sisen.uk](https://sisen.uk), provides further
+explanations, video recordings, and demonstrations.
+
 Scenario and lab documentation:
 
 - [Smart Building IoT](docs/smart-building.md)
