@@ -9,7 +9,7 @@ from orchestrator.topology import build_interface_plan
 from pathlib import Path
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 LEGACY_SCENARIO_NAMES = {
     "iot-medical-basic.yml": "smart-building-basic.yml",
 }
@@ -58,7 +58,7 @@ def print_summary(config, radio_count):
 
 
 def choose_scenario_file():
-    scenarios_dir = Path("scenarios")
+    scenarios_dir = PROJECT_ROOT / "scenarios"
     scenario_files = sorted(
         list(scenarios_dir.glob("*.yml")) + list(scenarios_dir.glob("*.yaml"))
     )
@@ -111,7 +111,7 @@ def start_sisen_launcher(scenario, ap_mode=None, no_wait=False, capture_hints=Fa
 
     cmd = [
         PYTHON,
-        "launch_sisen.py",
+        str(PROJECT_ROOT / "launch_sisen.py"),
         "--scenario",
         scenario,
         *(["--ap-mode", ap_mode] if ap_mode else []),
@@ -120,7 +120,7 @@ def start_sisen_launcher(scenario, ap_mode=None, no_wait=False, capture_hints=Fa
     ]
 
     try:
-        subprocess.run(cmd, check=True)
+        subprocess.run(cmd, check=True, cwd=str(PROJECT_ROOT))
     except subprocess.CalledProcessError:
         print("ERROR: SISEN launcher failed")
         sys.exit(1)

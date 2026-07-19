@@ -1165,7 +1165,6 @@ def _scenario_guidance():
                 "# Scenario-focused examples",
                 "python3 attacks/run_attack.py --category authenticity --scenario building --attack false-occupancy",
                 "python3 attacks/run_attack.py --category integrity --scenario building --attack environment-extreme",
-                "sudo python3 stop_iot_hwsim_lab.py",
             ],
             "captures": [
                 "# SSID/AP: SISEN-SMART-BUILDING on wlan0",
@@ -1195,7 +1194,6 @@ def _scenario_guidance():
                 "# Scenario-focused examples",
                 "python3 attacks/run_attack.py --category integrity --scenario medical --attack critical-vitals",
                 "python3 attacks/run_attack.py --category replay --scenario medical --attack stale-vitals",
-                "python3 stop_medical_ble_lab.py",
             ],
             "captures": [
                 "# SSID/AP: SISEN-MEDICAL-IOT on wlan0",

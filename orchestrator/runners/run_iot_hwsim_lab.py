@@ -19,7 +19,7 @@ from orchestrator.wireless import (
     hwsim_hostapd_mode_config,
 )
 
-PROJECT_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 def choose_python():
@@ -172,7 +172,7 @@ def wait_for_enter(message):
         print()
         print("Interrupted during observation.")
         print("Cleaning up HWSIM IoT lab...")
-        subprocess.run([sys.executable, str(PROJECT_ROOT / "stop_iot_hwsim_lab.py")], check=False)
+        subprocess.run([sys.executable, str(PROJECT_ROOT / "launch_sisen.py"), "--stop"], check=False)
         print("HWSIM IoT lab cancelled.")
         sys.exit(130)
 
@@ -186,7 +186,6 @@ def print_capture_hints(ap_mode):
     print(f"Sensor nodes: {len(DEVICES)}")
     print("MQTT topics: building/#")
     print("Topology is up and clients are associated. Suggested capture commands:")
-    print(f"  mkdir -p {capture_dir}")
     print(f"  sudo tcpdump -i {AP_INTERFACE} -n -vv -s 0 -Z \"$USER\" -w {capture_dir / 'smart-building-ap-wlan0.pcap'}")
     print(f"  sudo tcpdump -i any -n -vv -s 0 -Z \"$USER\" -w {capture_dir / 'smart-building-mqtt-building.pcap'} port 1883")
     for device in DEVICES:

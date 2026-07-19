@@ -363,7 +363,7 @@ main() {
   echo "  2. Verify Vagrant works:    vagrant --version"
   echo "  3. Verify libvirt works:    virsh list --all"
   echo "  4. Note your wireless interface name and set it in config.yaml (ap.interface)"
-  echo "  5. Run a test scenario:     python3 run_scenario.py configs/scada_example.yaml"
+  echo "  5. Run SISEN:              python3 launch_sisen.py"
   echo ""
   echo "  Wireless interface detected during setup: $WIRELESS_IFACE"
   echo ""

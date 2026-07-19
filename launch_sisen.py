@@ -42,6 +42,35 @@ AP_MODE_MENU = (
     ("wep", "WEP AP"),
     ("wpa2", "WPA2-PSK AP"),
 )
+SMART_BUILDING_NAMESPACE_PREFIXES = (
+    "temp-sensor",
+    "humidity-sensor",
+    "air-quality",
+    "occupancy",
+    "fire-alarm",
+    "smoke-detector",
+    "co2-detector",
+    "gas-leak",
+    "exit-status",
+    "sprinkler-status",
+)
+SMART_BUILDING_PROCESS_PATTERNS = (
+    "temperature_sensor.py",
+    "humidity_sensor.py",
+    "air_quality_sensor.py",
+    "occupancy_sensor.py",
+    "hazard_sensor.py",
+    "web/dashboard.py",
+)
+MEDICAL_PROCESS_PATTERNS = (
+    "wearable_data_generator.py",
+    "ble_wifi_gateway.py",
+    "medical-hwsim-hostapd.conf",
+    "medical-gateway.conf",
+    "192.168.70.10,192.168.70.50",
+)
+MEDICAL_GATEWAY_NAMESPACE = "medical-gateway"
+AP_MODE_STATE = Path("/tmp/sisen-ap-mode")
 
 
 def choose_python():
@@ -172,6 +201,83 @@ def print_log_tail(log_path, line_count=20):
             print(line.rstrip())
 
 
+def cleanup_command(cmd):
+    subprocess.run(cmd, check=False)
+
+
+def smart_building_namespaces():
+    return [
+        f"{prefix}-{index}"
+        for index in range(1, MAX_NODE_COUNT + 1)
+        for prefix in SMART_BUILDING_NAMESPACE_PREFIXES
+    ]
+
+
+def cleanup_smart_building_lab():
+    print("Stopping Smart Building lab processes...")
+
+    for process_name in ("wpa_supplicant", "hostapd", "dnsmasq"):
+        cleanup_command(["pkill", process_name])
+    for pattern in SMART_BUILDING_PROCESS_PATTERNS:
+        cleanup_command(["pkill", "-f", pattern])
+
+    for namespace in smart_building_namespaces():
+        cleanup_command(["ip", "netns", "delete", namespace])
+
+    cleanup_command(["modprobe", "-r", "mac80211_hwsim"])
+
+    temp_files = [
+        Path("/tmp/hwsim-hostapd.conf"),
+        Path("/tmp/hwsim-hostapd.log"),
+        Path("/tmp/hwsim-dnsmasq.conf"),
+        Path("/tmp/hwsim-dnsmasq.log"),
+        Path("/tmp/hwsim-dashboard.log"),
+        AP_MODE_STATE,
+    ]
+    for namespace in smart_building_namespaces():
+        temp_files.extend(
+            [
+                Path(f"/tmp/{namespace}.conf"),
+                Path(f"/tmp/{namespace}-wpa.log"),
+                Path(f"/tmp/{namespace}-wpa.pid"),
+                Path(f"/tmp/hwsim-{namespace}-sensor.log"),
+            ]
+        )
+    for temp_file in temp_files:
+        try:
+            temp_file.unlink()
+        except FileNotFoundError:
+            pass
+        except OSError:
+            pass
+
+
+def namespace_exists(namespace):
+    result = subprocess.run(
+        ["ip", "netns", "list"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return any(line.split()[0] == namespace for line in result.stdout.splitlines() if line.strip())
+
+
+def cleanup_medical_lab():
+    print("Stopping Medical IoT lab processes...")
+
+    for pattern in MEDICAL_PROCESS_PATTERNS:
+        cleanup_command(["pkill", "-f", pattern])
+
+    if namespace_exists(MEDICAL_GATEWAY_NAMESPACE):
+        cleanup_command(["ip", "netns", "delete", MEDICAL_GATEWAY_NAMESPACE])
+
+    try:
+        if AP_MODE_STATE.exists() and AP_MODE_STATE.read_text(encoding="utf-8").startswith("medical-hwsim-"):
+            AP_MODE_STATE.unlink()
+    except OSError:
+        pass
+
+
 def cleanup_labs():
     print()
     print("=== Stopping SISEN Launcher ===")
@@ -188,8 +294,8 @@ def cleanup_labs():
 
         run_step("Stop 6LoWPAN Lab", [*SISEN_LAB, "stop"], quiet=True)
         run_step("Stop standalone AP", ["bash", "ap/teardown-ap.sh"], quiet=True)
-        run_step("Stop Lab 2", [PYTHON, "stop_medical_ble_lab.py"], quiet=True)
-        run_step("Stop Lab 1", [PYTHON, "stop_iot_hwsim_lab.py"], quiet=True)
+        cleanup_medical_lab()
+        cleanup_smart_building_lab()
     except KeyboardInterrupt:
         print()
         print("Cleanup interrupted before all stop steps finished.")
@@ -397,7 +503,7 @@ def start_smart_building(ap_mode, args, sensor_count=DEFAULT_NODE_COUNT, include
         "Start Smart Building - HWSIM IoT",
         [
             PYTHON,
-            "run_iot_hwsim_lab.py",
+            "orchestrator/runners/run_iot_hwsim_lab.py",
             "--ap-mode",
             ap_mode,
             *runtime_flags(args, include_wait=include_wait),
@@ -412,7 +518,7 @@ def start_medical(args, ap_mode=None, patient_count=DEFAULT_PATIENT_COUNT, inclu
         "Start Medical IoT",
         [
             PYTHON,
-            "run_medical_ble_lab.py",
+            "orchestrator/runners/run_medical_ble_lab.py",
             *(["--ap-mode", ap_mode] if use_ap_gateway and ap_mode else []),
             *(["--no-ap-gateway"] if not use_ap_gateway else []),
             *runtime_flags(args, include_wait=include_wait),
@@ -445,7 +551,7 @@ def start_scada(ap_mode):
         "Start SCADA",
         [
             PYTHON,
-            "run_scenario.py",
+            "orchestrator/runners/run_scenario.py",
             "scenarios/scada-basic.yml",
             "--ap-mode",
             ap_mode,
@@ -550,9 +656,9 @@ def main():
     print()
     print("Cleaning previous lab processes...")
 
-    run_step("Stop Lab 2", [PYTHON, "stop_medical_ble_lab.py"], quiet=True)
+    cleanup_medical_lab()
     run_step("Stop 6LoWPAN Lab", [*SISEN_LAB, "stop"], quiet=True)
-    run_step("Stop Lab 1", [PYTHON, "stop_iot_hwsim_lab.py"], quiet=True)
+    cleanup_smart_building_lab()
 
     print()
     print("Starting labs...")

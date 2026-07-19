@@ -15,7 +15,7 @@ from orchestrator.wireless import (
     hwsim_hostapd_mode_config,
 )
 
-PROJECT_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 def choose_python():
@@ -357,7 +357,7 @@ def wait_for_enter(message):
         print()
         print("Interrupted during observation.")
         print("Cleaning up Medical BLE lab...")
-        subprocess.run([sys.executable, str(PROJECT_ROOT / "stop_medical_ble_lab.py")], check=False)
+        subprocess.run([sys.executable, str(PROJECT_ROOT / "launch_sisen.py"), "--stop"], check=False)
         print("Medical BLE lab cancelled.")
         sys.exit(130)
 
@@ -372,7 +372,6 @@ def print_capture_hints(ap_mode):
     print("MQTT topics: patient/#")
     print("Wearable source, gateway translation, Wi-Fi/AP, MQTT, and dashboard can be observed together.")
     print("Run these commands from the repository root.")
-    print(f"  mkdir -p {capture_dir}")
     print("  watch -n 1 cat /tmp/sisen-wearable-data.json")
     print("  tail -f /tmp/sisen-ble-wifi-gateway.log")
     print(f"  sudo tcpdump -i {AP_INTERFACE} -n -vv -s 0 -Z \"$USER\" -w {capture_dir}/medical-ap-wlan0.pcap")
