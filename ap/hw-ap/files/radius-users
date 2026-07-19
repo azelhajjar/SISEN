@@ -1,0 +1,3 @@
+alice   Cleartext-Password := "Password1!"
+bob     Cleartext-Password := "Password2!"
+charlie Cleartext-Password := "Password3!"

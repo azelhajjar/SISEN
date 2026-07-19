@@ -1,0 +1,19 @@
+# Runtime generated files
+/tmp/SISEN/
+ap/files/*.pid
+ap/files/*.log
+ap/files/hostapd.conf
+ap/files/dnsmasq.conf
+ap/files/dhcp.leases
+ap/files/dnsmasq.leases
+__pycache__/
+*.py[cod]
+.vagrant/
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/

@@ -1,0 +1,57 @@
+scenario:
+  name: smart-building-basic
+  type: iot
+  description: Smart Building HWSIM IoT scenario with temperature, humidity, air-quality and occupancy sensors publishing to building/#.
+
+ap:
+  mode: open
+  interface: wlan0
+  ssid: SISEN-BUILDING-LAB
+  channel: 6
+
+devices:
+  hmi: 0
+  scada_server: 0
+  plc: 0
+  rtu: 0
+  sensors: 5
+
+mqtt:
+  broker_host: 192.168.60.1
+  broker_port: 1883
+  topic_prefix: building
+
+traffic:
+  protocol: mqtt
+  intensity: medium
+  publish_interval_seconds: 5
+
+security:
+  weak_device_authentication: false
+  default_credentials_enabled: false
+
+failures:
+  random_device_dropoff: false
+
+anomalies:
+  enabled: false
+  out_of_range_values: false
+  unexpected_commands: false
+
+sensor_data:
+  temperature:
+    min: 18.0
+    max: 26.0
+    unit: celsius
+  humidity:
+    min: 35
+    max: 65
+    unit: percent
+  air_quality:
+    min: 350
+    max: 900
+    unit: ppm
+  occupancy:
+    values:
+      - occupied
+      - empty

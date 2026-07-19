@@ -1,0 +1,15 @@
+scenario:
+  name: medical-wearable-basic
+  type: medical_ble
+  description: Simulated medical wearable publishing patient vitals through a BLE-to-WiFi gateway
+
+gateway:
+  mqtt_broker: localhost
+
+wearables:
+  - name: patient-001
+    profile: heart_monitor
+    metrics:
+      - heart_rate
+      - spo2
+      - blood_pressure

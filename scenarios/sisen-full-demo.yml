@@ -1,0 +1,4 @@
+scenario:
+  name: sisen-full-demo
+  type: sisen_full
+  description: Full SISEN demonstration including Lab 1, Lab 2 and Lab 3
