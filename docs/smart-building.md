@@ -15,6 +15,8 @@ The scenario creates a HWSIM wireless access point and a configurable number of 
 
 Typical telemetry includes temperature, humidity, air quality, occupancy, fire alarm, smoke, CO2, gas leak, emergency exit, sprinkler, pressure, machine overheat, and emergency stop status.
 
+For teaching purposes, the default four-node launch intentionally includes safety-relevant sensors first: temperature, fire alarm, occupancy, and gas leak. Larger node counts add the remaining building telemetry sensors.
+
 ## Topology
 
 ```text

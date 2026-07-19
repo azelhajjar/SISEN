@@ -13,6 +13,8 @@ The worksheet contains the activity questions and safety/hazard analysis prompts
 
 The scenario creates a Linux-native 6LoWPAN topology with sensor-side and border-router namespaces. Telemetry flows from the low-power side through a border path and into MQTT/dashboard topics.
 
+For teaching purposes, the default four-node launch intentionally includes safety-relevant industrial telemetry first: temperature, gas leak, pressure status, and emergency stop. Larger node counts add the remaining industrial sensors.
+
 ## Topology
 
 ```text
