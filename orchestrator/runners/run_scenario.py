@@ -2,14 +2,17 @@ import sys
 import subprocess
 import argparse
 import os
-
-from orchestrator.config_parser import load_config, validate_config
-from orchestrator.wireless import calculate_required_radios, load_hwsim, start_ap
-from orchestrator.topology import build_interface_plan
 from pathlib import Path
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(PROJECT_ROOT))
+
+from orchestrator.config_parser import load_config, validate_config
+from orchestrator.wireless import calculate_required_radios, load_hwsim, start_ap
+from orchestrator.topology import build_interface_plan
+
+
 LEGACY_SCENARIO_NAMES = {
     "iot-medical-basic.yml": "smart-building-basic.yml",
 }

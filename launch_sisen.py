@@ -222,7 +222,8 @@ def cleanup_smart_building_lab():
         cleanup_command(["pkill", "-f", pattern])
 
     for namespace in smart_building_namespaces():
-        cleanup_command(["ip", "netns", "delete", namespace])
+        if namespace_exists(namespace):
+            cleanup_command(["ip", "netns", "delete", namespace])
 
     cleanup_command(["modprobe", "-r", "mac80211_hwsim"])
 
