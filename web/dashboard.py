@@ -75,13 +75,13 @@ PATIENT_META_RE = re.compile(r"^patient/(?P<patient_id>patient-\d+)/meta/(?P<fie
 
 KNOWN_AP_CLIENTS = {
     "02:60:00:00:00:01": {"device": "Temperature Sensor", "role": "Building telemetry"},
-    "02:60:00:00:00:02": {"device": "Humidity Sensor", "role": "Building telemetry"},
-    "02:60:00:00:00:03": {"device": "Air Quality Sensor", "role": "Building telemetry"},
-    "02:60:00:00:00:04": {"device": "Occupancy Sensor", "role": "Building telemetry"},
-    "02:60:00:00:00:05": {"device": "Fire Alarm", "role": "Building telemetry"},
-    "02:60:00:00:00:06": {"device": "Smoke Detector", "role": "Building telemetry"},
-    "02:60:00:00:00:07": {"device": "CO2 Detector", "role": "Building telemetry"},
-    "02:60:00:00:00:08": {"device": "Gas Leak Detector", "role": "Building telemetry"},
+    "02:60:00:00:00:02": {"device": "Fire Alarm", "role": "Building telemetry"},
+    "02:60:00:00:00:03": {"device": "Occupancy Sensor", "role": "Building telemetry"},
+    "02:60:00:00:00:04": {"device": "Gas Leak Detector", "role": "Building telemetry"},
+    "02:60:00:00:00:05": {"device": "Humidity Sensor", "role": "Building telemetry"},
+    "02:60:00:00:00:06": {"device": "Air Quality Sensor", "role": "Building telemetry"},
+    "02:60:00:00:00:07": {"device": "Smoke Detector", "role": "Building telemetry"},
+    "02:60:00:00:00:08": {"device": "CO2 Detector", "role": "Building telemetry"},
     "02:60:00:00:00:09": {"device": "Emergency Exit", "role": "Building telemetry"},
     "02:60:00:00:00:0a": {"device": "Sprinkler Status", "role": "Building telemetry"},
     "02:00:00:00:05:00": {"device": "Medical Gateway", "role": "BLE-to-Wi-Fi gateway"},
@@ -96,6 +96,24 @@ BUILDING_SENSOR_TYPES = [
         "locations": ["Room 101", "Room 102", "Room 103"],
     },
     {
+        "label": "Fire Alarm",
+        "field": "fire_alarm",
+        "unit": "",
+        "locations": ["Main Hall", "Room 102", "Server Room"],
+    },
+    {
+        "label": "Occupancy",
+        "field": "occupancy",
+        "unit": "",
+        "locations": ["Room 101", "Meeting Room", "Corridor"],
+    },
+    {
+        "label": "Gas Leak Detector",
+        "field": "gas_leak",
+        "unit": "",
+        "locations": ["Boiler Room", "Plant Room", "Kitchen"],
+    },
+    {
         "label": "Humidity",
         "field": "humidity",
         "unit": "%",
@@ -108,18 +126,6 @@ BUILDING_SENSOR_TYPES = [
         "locations": ["Lab", "Workshop", "Corridor"],
     },
     {
-        "label": "Occupancy",
-        "field": "occupancy",
-        "unit": "",
-        "locations": ["Room 101", "Meeting Room", "Corridor"],
-    },
-    {
-        "label": "Fire Alarm",
-        "field": "fire_alarm",
-        "unit": "",
-        "locations": ["Main Hall", "Room 102", "Server Room"],
-    },
-    {
         "label": "Smoke Detector",
         "field": "smoke",
         "unit": "",
@@ -130,12 +136,6 @@ BUILDING_SENSOR_TYPES = [
         "field": "co2",
         "unit": "",
         "locations": ["Car Park", "Loading Bay", "Workshop"],
-    },
-    {
-        "label": "Gas Leak Detector",
-        "field": "gas_leak",
-        "unit": "",
-        "locations": ["Boiler Room", "Plant Room", "Kitchen"],
     },
     {
         "label": "Emergency Exit",
@@ -159,6 +159,24 @@ INDUSTRIAL_SENSOR_TYPES = [
         "locations": ["Cold Storage", "Process Line", "Loading Bay"],
     },
     {
+        "label": "Gas Leak Detector",
+        "field": "gas_leak",
+        "unit": "",
+        "locations": ["Chemical Store", "Boiler Room", "Loading Bay"],
+    },
+    {
+        "label": "Pressure Safety Sensor",
+        "field": "pressure_status",
+        "unit": "",
+        "locations": ["Pressure Vessel", "Process Line", "Pump Station"],
+    },
+    {
+        "label": "Emergency Stop Monitor",
+        "field": "emergency_stop",
+        "unit": "",
+        "locations": ["Assembly Line", "Control Room", "Packaging Area"],
+    },
+    {
         "label": "Humidity",
         "field": "humidity",
         "unit": "%",
@@ -177,28 +195,10 @@ INDUSTRIAL_SENSOR_TYPES = [
         "locations": ["Assembly Bay", "Control Room", "Service Corridor"],
     },
     {
-        "label": "Gas Leak Detector",
-        "field": "gas_leak",
-        "unit": "",
-        "locations": ["Chemical Store", "Boiler Room", "Loading Bay"],
-    },
-    {
-        "label": "Pressure Safety Sensor",
-        "field": "pressure_status",
-        "unit": "",
-        "locations": ["Pressure Vessel", "Process Line", "Pump Station"],
-    },
-    {
         "label": "Machine Overheat Sensor",
         "field": "machine_overheat",
         "unit": "",
         "locations": ["CNC Cell", "Compressor Room", "Motor Control"],
-    },
-    {
-        "label": "Emergency Stop Monitor",
-        "field": "emergency_stop",
-        "unit": "",
-        "locations": ["Assembly Line", "Control Room", "Packaging Area"],
     },
 ]
 

@@ -97,8 +97,9 @@ Node-level topics follow this pattern:
 
 ```text
 building/nodes/node-01/temperature
-building/nodes/node-02/humidity
-building/nodes/node-03/air_quality
+building/nodes/node-02/fire_alarm
+building/nodes/node-03/occupancy
+building/nodes/node-04/gas_leak
 ```
 
 ## Attacks To Try

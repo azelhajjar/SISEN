@@ -51,24 +51,32 @@ SENSOR_TYPES = [
         "sensor": "iot/sensors/temperature_sensor.py",
     },
     {
-        "prefix": "humidity-sensor",
-        "sensor": "iot/sensors/humidity_sensor.py",
-    },
-    {
-        "prefix": "air-quality",
-        "sensor": "iot/sensors/air_quality_sensor.py",
-    },
-    {
-        "prefix": "occupancy",
-        "sensor": "iot/sensors/occupancy_sensor.py",
-    },
-    {
         "prefix": "fire-alarm",
         "sensor": "iot/sensors/hazard_sensor.py",
         "hazard_field": "fire_alarm",
         "hazard_label": "Fire Alarm",
         "normal_values": "Normal",
         "hazard_values": "Fire detected",
+    },
+    {
+        "prefix": "occupancy",
+        "sensor": "iot/sensors/occupancy_sensor.py",
+    },
+    {
+        "prefix": "gas-leak",
+        "sensor": "iot/sensors/hazard_sensor.py",
+        "hazard_field": "gas_leak",
+        "hazard_label": "Gas Leak Detector",
+        "normal_values": "Normal",
+        "hazard_values": "Gas detected",
+    },
+    {
+        "prefix": "humidity-sensor",
+        "sensor": "iot/sensors/humidity_sensor.py",
+    },
+    {
+        "prefix": "air-quality",
+        "sensor": "iot/sensors/air_quality_sensor.py",
     },
     {
         "prefix": "smoke-detector",
@@ -85,14 +93,6 @@ SENSOR_TYPES = [
         "hazard_label": "CO2 Detector",
         "normal_values": "Normal",
         "hazard_values": "High CO2",
-    },
-    {
-        "prefix": "gas-leak",
-        "sensor": "iot/sensors/hazard_sensor.py",
-        "hazard_field": "gas_leak",
-        "hazard_label": "Gas Leak Detector",
-        "normal_values": "Normal",
-        "hazard_values": "Gas detected",
     },
     {
         "prefix": "exit-status",

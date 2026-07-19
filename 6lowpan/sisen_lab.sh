@@ -474,7 +474,6 @@ start_sensor() {
 
 print_capture_hints() {
   capture_dir="$REPO_ROOT/captures"
-  mkdir -p "$capture_dir"
   cat <<EOF
 
 Capture hints:
@@ -525,13 +524,13 @@ status_lab() {
   echo "MQTT topics:"
   echo "  $MQTT_TOPIC"
   echo "  building/temperature"
-  echo "  building/humidity"
-  echo "  building/occupancy"
-  echo "  building/air_quality"
+  echo "  building/gas_leak"
+  echo "  building/pressure_status"
+  echo "  building/emergency_stop"
   echo
   echo "Dashboard relay logs:"
   found_relay_log=0
-  for name in temperature humidity occupancy air-quality; do
+  for name in temperature gas-leak pressure-status emergency-stop; do
     log_path="$STATE_DIR/relay-$name.log"
     if [ -f "$log_path" ]; then
       echo "  $log_path"
@@ -556,12 +555,12 @@ smoke_test() {
   mqtt_json_pid="$!"
   timeout 20 mosquitto_sub -h "$MQTT_HOST_ADDR" -p "$MQTT_PORT" -t building/temperature -C 1 >"$STATE_DIR/mqtt-temperature.log" 2>&1 &
   mqtt_temp_pid="$!"
-  timeout 20 mosquitto_sub -h "$MQTT_HOST_ADDR" -p "$MQTT_PORT" -t building/humidity -C 1 >"$STATE_DIR/mqtt-humidity.log" 2>&1 &
-  mqtt_humidity_pid="$!"
-  timeout 20 mosquitto_sub -h "$MQTT_HOST_ADDR" -p "$MQTT_PORT" -t building/occupancy -C 1 >"$STATE_DIR/mqtt-occupancy.log" 2>&1 &
-  mqtt_occupancy_pid="$!"
-  timeout 20 mosquitto_sub -h "$MQTT_HOST_ADDR" -p "$MQTT_PORT" -t building/air_quality -C 1 >"$STATE_DIR/mqtt-air-quality.log" 2>&1 &
-  mqtt_air_quality_pid="$!"
+  timeout 20 mosquitto_sub -h "$MQTT_HOST_ADDR" -p "$MQTT_PORT" -t building/gas_leak -C 1 >"$STATE_DIR/mqtt-gas-leak.log" 2>&1 &
+  mqtt_gas_leak_pid="$!"
+  timeout 20 mosquitto_sub -h "$MQTT_HOST_ADDR" -p "$MQTT_PORT" -t building/pressure_status -C 1 >"$STATE_DIR/mqtt-pressure-status.log" 2>&1 &
+  mqtt_pressure_pid="$!"
+  timeout 20 mosquitto_sub -h "$MQTT_HOST_ADDR" -p "$MQTT_PORT" -t building/emergency_stop -C 1 >"$STATE_DIR/mqtt-emergency-stop.log" 2>&1 &
+  mqtt_emergency_stop_pid="$!"
 
   sleep 1
   start_sensor "$COUNT"
@@ -570,9 +569,9 @@ smoke_test() {
   wait "$(cat "$(pid_path gateway)")"
   wait "$mqtt_json_pid"
   wait "$mqtt_temp_pid"
-  wait "$mqtt_humidity_pid"
-  wait "$mqtt_occupancy_pid"
-  wait "$mqtt_air_quality_pid"
+  wait "$mqtt_gas_leak_pid"
+  wait "$mqtt_pressure_pid"
+  wait "$mqtt_emergency_stop_pid"
 
   echo
   echo "Smoke test gateway output:"
@@ -583,12 +582,12 @@ smoke_test() {
   echo
   echo "Smoke test dashboard temperature output:"
   cat "$STATE_DIR/mqtt-temperature.log"
-  echo "Smoke test dashboard humidity output:"
-  cat "$STATE_DIR/mqtt-humidity.log"
-  echo "Smoke test dashboard occupancy output:"
-  cat "$STATE_DIR/mqtt-occupancy.log"
-  echo "Smoke test dashboard air-quality output:"
-  cat "$STATE_DIR/mqtt-air-quality.log"
+  echo "Smoke test dashboard gas leak output:"
+  cat "$STATE_DIR/mqtt-gas-leak.log"
+  echo "Smoke test dashboard pressure-status output:"
+  cat "$STATE_DIR/mqtt-pressure-status.log"
+  echo "Smoke test dashboard emergency-stop output:"
+  cat "$STATE_DIR/mqtt-emergency-stop.log"
 
   echo
   echo "SUCCESS: smoke test validated AP, 6LoWPAN, border gateway, MQTT and dashboard-compatible topics."
