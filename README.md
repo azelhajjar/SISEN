@@ -36,8 +36,7 @@ sudo apt install -y \
     python3 \
     python3-venv \
     python3-pip \
-    dos2unix \
-    netcat-openbsd
+   netcat-openbsd
 ```
 
 Package purpose:
@@ -48,13 +47,12 @@ Package purpose:
 | `dnsmasq` | DHCP / DNS support |
 | `mosquitto` | MQTT broker |
 | `mosquitto-clients` | MQTT diagnostics |
-| `iw` | Wireless inspection |
+| `iw` | Wireless utility |
 | `iproute2` | Namespaces / networking |
 | `net-tools` | Diagnostics |
 | `python3` | Runtime |
 | `python3-venv` | Virtual environments |
 | `python3-pip` | Python packages |
-| `dos2unix` | Windows line ending fixes |
 | `netcat-openbsd` | Broker connectivity testing |
 
 ## Setup
