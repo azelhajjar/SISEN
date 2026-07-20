@@ -240,6 +240,32 @@ def node_status(field, value, online):
     return "WARNING"
 
 
+def strongest_status(statuses):
+    if "CRITICAL" in statuses:
+        return "CRITICAL"
+    if "WARNING" in statuses:
+        return "WARNING"
+    if "NORMAL" in statuses:
+        return "NORMAL"
+    if "RUNNING" in statuses:
+        return "RUNNING"
+    return "WAITING"
+
+
+def node_value(data, collection_name, node_id, field):
+    node_values = data.get(collection_name, {}).get(node_id, {})
+    return node_values.get(field, data.get(field))
+
+
+def composite_metric(label, field, unit, value, online):
+    return {
+        "label": label,
+        "value": value,
+        "unit": unit,
+        "status": node_status(field, value, online),
+    }
+
+
 def building_nodes(ap_status, data):
     clients = []
     for client in ap_status.get("clients", []):
@@ -256,28 +282,73 @@ def building_nodes(ap_status, data):
             for index in range(1, 5)
         ]
 
-    nodes = []
-    for index, client in sorted(clients, key=lambda item: item[0]):
-        sensor_type = BUILDING_SENSOR_TYPES[(index - 1) % len(BUILDING_SENSOR_TYPES)]
-        instance = ((index - 1) // len(BUILDING_SENSOR_TYPES)) + 1
-        locations = sensor_type["locations"]
-        location = locations[(instance - 1) % len(locations)]
-        label = f"{location} {sensor_type['label']}"
-        node_id = f"node-{index:02d}"
-        node_values = data.get("building_node_values", {}).get(node_id, {})
-        value = node_values.get(sensor_type["field"], data.get(sensor_type["field"]))
-        nodes.append(
+    client_map = {index: client for index, client in clients}
+    online = data.get("status") == "ONLINE"
+    cards = [
+        {
+            "label": "Room 101 Safety Context",
+            "detail": "nodes 01-04",
+            "items": [
+                ("Temperature", "node-01", "temperature", "°C"),
+                ("Fire alarm", "node-02", "fire_alarm", ""),
+                ("Occupancy", "node-03", "occupancy", ""),
+                ("Gas leak", "node-04", "gas_leak", ""),
+            ],
+            "indexes": [1, 2, 3, 4],
+        },
+        {
+            "label": "Plant And Air Safety Context",
+            "detail": "nodes 05-08",
+            "items": [
+                ("Humidity", "node-05", "humidity", "%"),
+                ("Air quality", "node-06", "air_quality", "ppm"),
+                ("Smoke", "node-07", "smoke", ""),
+                ("CO2", "node-08", "co2", ""),
+            ],
+            "indexes": [5, 6, 7, 8],
+        },
+        {
+            "label": "Egress And Response Context",
+            "detail": "nodes 09-10",
+            "items": [
+                ("Emergency exit", "node-09", "exit_status", ""),
+                ("Sprinkler", "node-10", "sprinkler_status", ""),
+            ],
+            "indexes": [9, 10],
+        },
+    ]
+
+    visible_cards = []
+    visible_indexes = {index for index, _client in clients}
+    if not visible_indexes:
+        visible_indexes = {1, 2, 3, 4}
+
+    for card in cards:
+        if not any(index in visible_indexes for index in card["indexes"]):
+            continue
+        metrics = []
+        for label, node_id, field, unit in card["items"]:
+            value = node_value(data, "building_node_values", node_id, field)
+            metrics.append(composite_metric(label, field, unit, value, online))
+        statuses = [metric["status"] for metric in metrics]
+        macs = [
+            client_map[index].get("mac", "")
+            for index in card["indexes"]
+            if index in client_map and client_map[index].get("mac")
+        ]
+        detail = card["detail"]
+        if macs:
+            detail = f"{detail} · {len(macs)} associated sensors"
+        visible_cards.append(
             {
-                "label": label,
-                "value": value,
-                "unit": sensor_type["unit"],
-                "mac": client.get("mac", ""),
-                "ip": client.get("ip", ""),
-                "status": node_status(sensor_type["field"], value, data.get("status") == "ONLINE"),
+                "label": card["label"],
+                "metrics": metrics,
+                "detail": detail,
+                "status": strongest_status(statuses),
             }
         )
 
-    return nodes
+    return visible_cards
 
 
 def read_6lowpan_sensor_count():
@@ -289,25 +360,51 @@ def read_6lowpan_sensor_count():
 
 
 def sixlowpan_nodes(data):
-    nodes = []
-    for index in range(1, read_6lowpan_sensor_count() + 1):
-        sensor_type = INDUSTRIAL_SENSOR_TYPES[(index - 1) % len(INDUSTRIAL_SENSOR_TYPES)]
-        instance = ((index - 1) // len(INDUSTRIAL_SENSOR_TYPES)) + 1
-        location = sensor_type["locations"][(instance - 1) % len(sensor_type["locations"])]
-        label = f"{location} {sensor_type['label']}"
-        node_id = f"node-{index:02d}"
-        node_values = data.get("sixlowpan_node_values", {}).get(node_id, {})
-        value = node_values.get(sensor_type["field"], data.get(sensor_type["field"]))
-        nodes.append(
+    sensor_count = read_6lowpan_sensor_count()
+    online = data.get("status") == "ONLINE"
+    cards = [
+        {
+            "label": "Boiler Room Safety Context",
+            "detail": "industrial nodes 01-04",
+            "items": [
+                ("Temperature", "node-01", "temperature", "°C"),
+                ("Gas leak", "node-02", "gas_leak", ""),
+                ("Pressure", "node-03", "pressure_status", ""),
+                ("Emergency stop", "node-04", "emergency_stop", ""),
+            ],
+            "indexes": [1, 2, 3, 4],
+        },
+        {
+            "label": "Process Line Operating Context",
+            "detail": "industrial nodes 05-08",
+            "items": [
+                ("Humidity", "node-05", "humidity", "%"),
+                ("Occupancy", "node-06", "occupancy", ""),
+                ("Air quality", "node-07", "air_quality", "ppm"),
+                ("Machine overheat", "node-08", "machine_overheat", ""),
+            ],
+            "indexes": [5, 6, 7, 8],
+        },
+    ]
+
+    visible_cards = []
+    for card in cards:
+        if not any(index <= sensor_count for index in card["indexes"]):
+            continue
+        metrics = []
+        for label, node_id, field, unit in card["items"]:
+            value = node_value(data, "sixlowpan_node_values", node_id, field)
+            metrics.append(composite_metric(label, field, unit, value, online))
+        statuses = [metric["status"] for metric in metrics]
+        visible_cards.append(
             {
-                "label": label,
-                "value": value,
-                "unit": sensor_type["unit"],
-                "detail": f"industrial {node_id}",
-                "status": node_status(sensor_type["field"], value, data.get("status") == "ONLINE"),
+                "label": card["label"],
+                "metrics": metrics,
+                "detail": card["detail"],
+                "status": strongest_status(statuses),
             }
         )
-    return nodes
+    return visible_cards
 
 
 def patient_sort_key(item):
@@ -1312,8 +1409,10 @@ def current_snapshot():
         "ap": ap_snapshot,
         "devices": scenario_devices(_active_dashboard_scenario(), ap_snapshot),
         "building_nodes": building_nodes(ap_snapshot, data),
+        "building_sensor_count": len(ap_snapshot.get("clients", [])),
         "medical_patients": medical_patients(data),
         "sixlowpan_nodes": sixlowpan_nodes(data),
+        "sixlowpan_sensor_count": read_6lowpan_sensor_count(),
         "lab": read_lab_status(_active_dashboard_scenario()),
         "commands": student_commands(),
         "captures": capture_commands(),

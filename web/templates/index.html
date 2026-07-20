@@ -169,6 +169,34 @@
             line-height: 1.35;
         }
 
+        .metric-list {
+            display: grid;
+            gap: 6px;
+        }
+
+        .metric-line {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+            padding-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .metric-line:last-child {
+            border-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .metric-line span {
+            color: var(--muted);
+        }
+
+        .metric-line strong {
+            text-align: right;
+            overflow-wrap: anywhere;
+        }
+
         .badge {
             display: inline-flex;
             align-items: center;
@@ -605,7 +633,7 @@
             text("ap-ip-label", "Gateway IPv6");
             text("ap-ip", "fd00:6:3::2");
             text("ap-client-count-label", "Sensor nodes");
-            text("ap-client-count", (state.sixlowpan_nodes || []).length || "0");
+            text("ap-client-count", state.sixlowpan_sensor_count || "0");
             text("gateway-label", "6LoWPAN gateway");
             text("gateway-status", infrastructureComponentStatus(state, ["border router", "gateway"]));
             text("secondary-gateway-label", "MQTT broker");
@@ -637,6 +665,15 @@
         }
         grid.innerHTML = safeNodes.map((node) => {
             const status = node.status || "WAITING";
+            if (node.metrics && node.metrics.length) {
+                const metricsHtml = node.metrics.map((metric) => {
+                    const value = metric.value ?? "No data yet";
+                    const unit = metric.unit ? ` ${metric.unit}` : "";
+                    return `<div class="metric-line"><span>${escapeHtml(metric.label)}</span><strong>${escapeHtml(value)}${escapeHtml(unit)}</strong></div>`;
+                }).join("");
+                const detailHtml = node.detail ? `<div class="metric-detail">${escapeHtml(node.detail)}</div>` : "";
+                return `<div class="metric"><span class="metric-status badge ${String(status).toLowerCase()}">${escapeHtml(status)}</span><div class="metric-label">${escapeHtml(node.label)}</div><div class="metric-list">${metricsHtml}</div>${detailHtml}</div>`;
+            }
             const unit = node.unit ? ` ${node.unit}` : "";
             const value = node.value ?? "No data yet";
             const detail = node.detail || (node.ip ? `MAC ${node.mac} · IP ${node.ip}` : node.mac ? `MAC ${node.mac}` : "");

@@ -15,7 +15,7 @@ The scenario creates a HWSIM wireless access point and a configurable number of 
 
 Typical telemetry includes temperature, humidity, air quality, occupancy, fire alarm, smoke, CO2, gas leak, emergency exit, sprinkler, pressure, machine overheat, and emergency stop status.
 
-For teaching purposes, the default four-node launch intentionally includes safety-relevant sensors first: temperature, fire alarm, occupancy, and gas leak. Larger node counts add the remaining building telemetry sensors.
+For teaching purposes, the default four-node launch intentionally includes safety-relevant sensors first: temperature, fire alarm, occupancy, and gas leak. The dashboard groups these readings into a safety-context card; larger node counts add further building context cards.
 
 ## Topology
 
@@ -84,7 +84,7 @@ The dashboard shows:
 - telemetry status
 - MQTT connection status
 - AP mode, SSID, IP address, and associated stations
-- one card per active Smart Building sensor node
+- Smart Building safety-context cards built from active sensor nodes
 - student attack and capture guidance
 
 ## MQTT Topics
