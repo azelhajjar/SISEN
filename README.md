@@ -63,7 +63,7 @@ Clone SISEN and enter the repository:
 git clone https://github.com/azelhajjar/SISEN.git
 cd SISEN
 ```
-
+**Note:** All commands in this repository assume that you are running them from the repository root directory.
 ## Setup
 
 Run setup from the repository root:
