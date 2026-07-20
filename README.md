@@ -197,6 +197,10 @@ Stop launcher-managed labs and dashboard processes:
 python3 launch_sisen.py --stop
 ```
 
+## Future Extensions
+
+Possible future extensions include BLE-specific attacks, additional IoT infrastructure attacks, and further manual wireless activities. These are not required for the current SISEN lab scenarios.
+
 ## Acknowledgments
 
 The initial repository was used for wireless security teaching at the University of Westminster for the BSc Cyber Security and Forensics. This project extends that work to focus on security-informed safety aspects of IoT systems.
