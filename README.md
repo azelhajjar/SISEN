@@ -55,6 +55,15 @@ Package purpose:
 | `python3-pip` | Python packages |
 | `netcat-openbsd` | Broker connectivity testing |
 
+## Clone The Repository
+
+Clone SISEN and enter the repository:
+
+```bash
+git clone https://github.com/azelhajjar/SISEN.git
+cd SISEN
+```
+
 ## Setup
 
 Run setup from the repository root:
