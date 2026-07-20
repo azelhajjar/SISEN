@@ -11,16 +11,16 @@ The worksheet contains the activity questions and safety/hazard analysis prompts
 
 ## Scenario Overview
 
-The scenario creates a HWSIM wireless access point and a configurable number of simulated building sensor nodes. Each node runs in a Linux namespace and publishes telemetry through MQTT to the dashboard.
+The scenario creates a HWSIM wireless access point and a configurable number of simulated building room or zone groups. Each group runs in a Linux namespace and publishes several telemetry fields through MQTT to the dashboard.
 
-Typical telemetry includes temperature, humidity, air quality, occupancy, fire alarm, smoke, CO2, gas leak, emergency exit, sprinkler, pressure, machine overheat, and emergency stop status.
+Typical telemetry includes temperature, humidity, air quality, occupancy, fire alarm, smoke, CO2, gas leak, emergency exit, and sprinkler status.
 
-For teaching purposes, the default four-node launch intentionally includes safety-relevant sensors first: temperature, fire alarm, occupancy, and gas leak. The dashboard groups these readings into a safety-context card; larger node counts add further building context cards.
+With `--nodes 4`, the dashboard shows four room/zone cards: Room 101, Plant Room, Server Room, and Workshop. Each card combines several readings and shows the related Sensor IDs.
 
 ## Topology
 
 ```text
-Smart Building sensors in namespaces
+Smart Building room/zone groups in namespaces
         |
         | Wi-Fi association to HWSIM AP
         v
@@ -33,7 +33,7 @@ MQTT broker on localhost:1883
 SISEN dashboard
 ```
 
-The AP interface is normally `wlan0`. Sensor namespace interfaces are assigned as `wlan1`, `wlan2`, and so on.
+The AP interface is normally `wlan0`. Room/zone namespace interfaces are assigned as `wlan1`, `wlan2`, and so on.
 
 ## Launch Commands
 
@@ -69,7 +69,7 @@ The scenario still launches normally through `launch_sisen.py`, but the MAC filt
 
 See [Manual Attacks](manual-attacks.md) for monitor-mode and capture guidance.
 
-The launcher accepts between 1 and 10 Smart Building sensor nodes.
+The launcher accepts between 1 and 10 Smart Building room/zone groups.
 
 ## Dashboard View
 
@@ -84,7 +84,7 @@ The dashboard shows:
 - telemetry status
 - MQTT connection status
 - AP mode, SSID, IP address, and associated stations
-- Smart Building safety-context cards built from active sensor nodes
+- Smart Building room/zone cards built from active telemetry groups
 - student attack and capture guidance
 
 ## MQTT Topics
@@ -99,9 +99,9 @@ Node-level topics follow this pattern:
 
 ```text
 building/nodes/node-01/temperature
-building/nodes/node-02/fire_alarm
-building/nodes/node-03/occupancy
-building/nodes/node-04/gas_leak
+building/nodes/node-01/fire_alarm
+building/nodes/node-01/occupancy
+building/nodes/node-01/gas_leak
 ```
 
 ## Attacks To Try
@@ -119,7 +119,7 @@ python3 attacks/run_attack.py --category authenticity --scenario building --atta
 python3 attacks/run_attack.py --category integrity --scenario building --attack extreme
 python3 attacks/run_attack.py --category replay --scenario building --attack replay
 python3 attacks/run_attack.py --category availability --scenario building --attack noise --count 5
-sudo python3 attacks/run_attack.py --category availability --scenario building --attack client-drop --target temperature
+sudo python3 attacks/run_attack.py --category availability --scenario building --attack client-drop --target room-101
 sudo python3 attacks/run_attack.py --category availability --scenario building --attack sensor-blackout --duration 10
 ```
 
@@ -145,10 +145,10 @@ Capture AP-side traffic:
 sudo tcpdump -i wlan0 -n -vv -s 0 -Z "$USER" -w captures/smart-building-ap-wlan0.pcap
 ```
 
-Capture one sensor namespace path:
+Capture one room/zone namespace path:
 
 ```bash
-sudo ip netns exec temp-sensor-1 tcpdump -i wlan1 -n -vv -s 0 -Z "$USER" -w captures/smart-building-temp-sensor-1.pcap
+sudo ip netns exec room-101 tcpdump -i wlan1 -n -vv -s 0 -Z "$USER" -w captures/smart-building-room-101.pcap
 ```
 
 Capture MQTT telemetry and attack impact:

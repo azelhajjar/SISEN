@@ -26,7 +26,7 @@ ip -brief addr
 
 The dashboard Capture Guidance panel also shows scenario-specific capture commands.
 
-**Note:** An empty folder named capture is included in the repository for storing all captured files generated during the activities.
+**Note:** Capture files should be saved in the `captures/` folder included in the repository.
 
 ## Smart Building Capture Points
 
@@ -42,10 +42,10 @@ AP-side capture:
 sudo tcpdump -i wlan0 -n -vv -s 0 -Z "$USER" -w captures/smart-building-ap-wlan0.pcap
 ```
 
-One sensor namespace path:
+One room/zone namespace path:
 
 ```bash
-sudo ip netns exec temp-sensor-1 tcpdump -i wlan1 -n -vv -s 0 -Z "$USER" -w captures/smart-building-temp-sensor-1.pcap
+sudo ip netns exec room-101 tcpdump -i wlan1 -n -vv -s 0 -Z "$USER" -w captures/smart-building-room-101.pcap
 ```
 
 MQTT path:

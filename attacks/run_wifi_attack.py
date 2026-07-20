@@ -14,16 +14,16 @@ import time
 
 
 BUILDING_CLIENTS = {
-    "temperature": ("temp-sensor-1", "wlan1"),
-    "fire-alarm": ("fire-alarm-1", "wlan2"),
-    "occupancy": ("occupancy-1", "wlan3"),
-    "gas-leak": ("gas-leak-1", "wlan4"),
-    "humidity": ("humidity-sensor-1", "wlan5"),
-    "air-quality": ("air-quality-1", "wlan6"),
-    "smoke": ("smoke-detector-1", "wlan7"),
-    "co2": ("co2-detector-1", "wlan8"),
-    "exit-status": ("exit-status-1", "wlan9"),
-    "sprinkler-status": ("sprinkler-status-1", "wlan10"),
+    "room-101": ("room-101", "wlan1"),
+    "plant-room": ("plant-room", "wlan2"),
+    "server-room": ("server-room", "wlan3"),
+    "workshop": ("workshop", "wlan4"),
+    "room-101-2": ("room-101-2", "wlan5"),
+    "plant-room-2": ("plant-room-2", "wlan6"),
+    "server-room-2": ("server-room-2", "wlan7"),
+    "workshop-2": ("workshop-2", "wlan8"),
+    "room-101-3": ("room-101-3", "wlan9"),
+    "plant-room-3": ("plant-room-3", "wlan10"),
 }
 
 
@@ -32,7 +32,7 @@ def require_root():
         print("ERROR: Wi-Fi layer demos need root privileges for ip netns operations.", file=sys.stderr)
         print("Run with sudo, for example:", file=sys.stderr)
         print(
-            "  sudo python3 attacks/run_attack.py --category availability --scenario building --attack client-drop --target temperature",
+            "  sudo python3 attacks/run_attack.py --category availability --scenario building --attack client-drop --target room-101",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -61,39 +61,39 @@ def set_client_link(target, state):
 def run_client_drop(target, duration):
     namespace, interface = BUILDING_CLIENTS[target]
     if not namespace_exists(namespace):
-        print(f"ERROR: target {target} is not present in the running Smart Building node set.", file=sys.stderr)
-        print("Start the scenario with enough nodes for this sensor, or choose a visible target.", file=sys.stderr)
+        print(f"ERROR: target {target} is not present in the running Smart Building room/zone set.", file=sys.stderr)
+        print("Start the scenario with enough nodes for this room/zone, or choose a visible target.", file=sys.stderr)
         sys.exit(1)
-    print(f"Temporarily disconnecting {target} sensor ({namespace}/{interface}) for {duration}s")
+    print(f"Temporarily disconnecting {target} room/zone interface ({namespace}/{interface}) for {duration}s")
     set_client_link(target, "down")
     time.sleep(duration)
     set_client_link(target, "up")
-    print(f"Restored {target} sensor interface")
+    print(f"Restored {target} room/zone interface")
 
 
 def run_sensor_blackout(duration):
-    print(f"Temporarily disconnecting all Smart Building sensor interfaces for {duration}s")
+    print(f"Temporarily disconnecting all Smart Building room/zone interfaces for {duration}s")
     active_targets = [
         target
         for target, (namespace, _interface) in BUILDING_CLIENTS.items()
         if namespace_exists(namespace)
     ]
     if not active_targets:
-        print("ERROR: no Smart Building sensor namespaces are present.", file=sys.stderr)
+        print("ERROR: no Smart Building room/zone namespaces are present.", file=sys.stderr)
         sys.exit(1)
     for target in active_targets:
         set_client_link(target, "down")
     time.sleep(duration)
     for target in active_targets:
         set_client_link(target, "up")
-    print("Restored all Smart Building sensor interfaces")
+    print("Restored all Smart Building room/zone interfaces")
 
 
 def main():
     parser = argparse.ArgumentParser(description="Run bounded Wi-Fi layer SISEN attack demonstrations.")
     parser.add_argument("--scenario", choices=("building",), default="building")
     parser.add_argument("--attack", choices=("client-drop", "sensor-blackout"), required=True)
-    parser.add_argument("--target", choices=sorted(BUILDING_CLIENTS), default="temperature")
+    parser.add_argument("--target", choices=sorted(BUILDING_CLIENTS), default="room-101")
     parser.add_argument("--duration", type=int, default=10)
     args = parser.parse_args()
 

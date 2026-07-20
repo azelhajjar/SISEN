@@ -13,7 +13,7 @@ The worksheet contains the activity questions and safety/hazard analysis prompts
 
 The scenario creates a Linux-native 6LoWPAN topology with sensor-side and border-router namespaces. Telemetry flows from the low-power side through a border path and into MQTT/dashboard topics.
 
-For teaching purposes, the default four-node launch intentionally includes safety-relevant industrial telemetry first: temperature, gas leak, pressure status, and emergency stop. The dashboard groups these readings into a safety-context card; larger node counts add further industrial context cards.
+With `--nodes 4`, the dashboard shows four industrial asset cards: Boiler Room, Process Line, Cold Storage, and Loading Bay. Each card combines several readings and shows the related Sensor IDs.
 
 ## Topology
 
@@ -57,7 +57,7 @@ Supported AP modes:
 open, hidden, wep, wpa2
 ```
 
-The launcher accepts between 1 and 10 6LoWPAN sensor nodes. The default is 4.
+The launcher accepts between 1 and 10 6LoWPAN industrial assets. The default is 4.
 
 ## Dashboard View
 
@@ -72,7 +72,7 @@ The dashboard shows:
 - telemetry status
 - MQTT connection status
 - AP/backhaul mode when enabled
-- 6LoWPAN industrial safety-context cards built from active sensor nodes
+- 6LoWPAN industrial asset cards built from active telemetry groups
 - 6LoWPAN gateway and MQTT broker status
 - student attack and capture guidance
 

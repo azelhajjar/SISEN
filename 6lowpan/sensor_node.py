@@ -8,69 +8,50 @@ import time
 from datetime import datetime, timezone
 
 
-SENSOR_SEQUENCE = [
+ASSET_PROFILES = [
     {
-        "prefix": "temp",
-        "label": "Temperature Sensor",
-        "field": "temperature",
-        "unit": "C",
-        "base": 22.4,
-        "step": 0.1,
+        "sensor_id": "TEMP-BLR,GAS-BLR,PRESS-BLR,ESTOP-BLR",
+        "label": "Boiler Room",
+        "unit": "mixed",
+        "fields": {
+            "temperature": {"base": 24.0, "step": 0.1},
+            "gas_leak": {"normal_values": ["Normal"], "hazard_values": ["Gas detected"]},
+            "pressure_status": {"normal_values": ["Normal"], "hazard_values": ["Pressure abnormal"]},
+            "emergency_stop": {"normal_values": ["Ready"], "hazard_values": ["Emergency stop active"]},
+        },
     },
     {
-        "prefix": "gas-leak",
-        "label": "Gas Leak Detector",
-        "field": "gas_leak",
-        "unit": "state",
-        "normal_values": ["Normal"],
-        "hazard_values": ["Gas detected"],
+        "sensor_id": "TEMP-LINE,HUM-LINE,OVERHEAT-LINE,ESTOP-LINE",
+        "label": "Process Line",
+        "unit": "mixed",
+        "fields": {
+            "temperature": {"base": 26.0, "step": 0.2},
+            "humidity": {"base": 48.0, "step": 0.2},
+            "machine_overheat": {"normal_values": ["Normal"], "hazard_values": ["Overheat detected"]},
+            "emergency_stop": {"normal_values": ["Ready"], "hazard_values": ["Emergency stop active"]},
+        },
     },
     {
-        "prefix": "pressure",
-        "label": "Pressure Safety Sensor",
-        "field": "pressure_status",
-        "unit": "state",
-        "normal_values": ["Normal"],
-        "hazard_values": ["Pressure abnormal"],
+        "sensor_id": "TEMP-COLD,HUM-COLD,DOOR-COLD,AIR-COLD",
+        "label": "Cold Storage",
+        "unit": "mixed",
+        "fields": {
+            "temperature": {"base": 5.0, "step": 0.1},
+            "humidity": {"base": 42.0, "step": 0.2},
+            "occupancy": {"values": ["Vacant", "Occupied"]},
+            "air_quality": {"base": 410.0, "step": 4.0},
+        },
     },
     {
-        "prefix": "emergency-stop",
-        "label": "Emergency Stop Monitor",
-        "field": "emergency_stop",
-        "unit": "state",
-        "normal_values": ["Ready"],
-        "hazard_values": ["Emergency stop active"],
-    },
-    {
-        "prefix": "humidity",
-        "label": "Humidity Sensor",
-        "field": "humidity",
-        "unit": "%",
-        "base": 48.0,
-        "step": 0.2,
-    },
-    {
-        "prefix": "occupancy",
-        "label": "Occupancy Sensor",
-        "field": "occupancy",
-        "unit": "state",
-        "values": ["Occupied", "Vacant"],
-    },
-    {
-        "prefix": "air-quality",
-        "label": "Air Quality Sensor",
-        "field": "air_quality",
-        "unit": "ppm",
-        "base": 420.0,
-        "step": 5.0,
-    },
-    {
-        "prefix": "overheat",
-        "label": "Machine Overheat Sensor",
-        "field": "machine_overheat",
-        "unit": "state",
-        "normal_values": ["Normal"],
-        "hazard_values": ["Overheat detected"],
+        "sensor_id": "TEMP-BAY,GAS-BAY,OCC-BAY,AIR-BAY",
+        "label": "Loading Bay",
+        "unit": "mixed",
+        "fields": {
+            "temperature": {"base": 21.0, "step": 0.1},
+            "gas_leak": {"normal_values": ["Normal"], "hazard_values": ["Gas detected"]},
+            "occupancy": {"values": ["Occupied", "Vacant"]},
+            "air_quality": {"base": 460.0, "step": 5.0},
+        },
     },
 ]
 
@@ -80,31 +61,31 @@ INCIDENT_MODE = os.getenv("SISEN_INCIDENT_MODE") == "1"
 def build_reading(sequence, sensor_nodes):
     sensor_nodes = max(1, sensor_nodes)
     node_index = (sequence % sensor_nodes) + 1
-    sensor = SENSOR_SEQUENCE[(node_index - 1) % len(SENSOR_SEQUENCE)]
-    instance = ((node_index - 1) // len(SENSOR_SEQUENCE)) + 1
-    sensor_id = f"{sensor['prefix']}-{instance:02d}"
+    profile = ASSET_PROFILES[(node_index - 1) % len(ASSET_PROFILES)]
+    instance = ((node_index - 1) // len(ASSET_PROFILES)) + 1
     reading = {
-        "sensor_id": sensor_id,
+        "sensor_id": profile["sensor_id"],
         "node_id": f"node-{node_index:02d}",
-        "label": f"{sensor['label']} {instance}",
-        "unit": sensor["unit"],
+        "label": profile["label"] if instance == 1 else f"{profile['label']} {instance}",
+        "unit": profile["unit"],
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
-    if "normal_values" in sensor:
-        values = sensor["normal_values"]
-        if INCIDENT_MODE and random.random() < 0.08:
-            values = sensor.get("hazard_values", values)
-        reading[sensor["field"]] = random.choice(values)
-    elif "values" in sensor:
-        reading[sensor["field"]] = sensor["values"][(sequence + instance - 1) % len(sensor["values"])]
-    else:
-        cycle = sequence // sensor_nodes
-        jitter = random.uniform(-0.3, 0.3) if sensor["field"] != "air_quality" else random.uniform(-8.0, 8.0)
-        reading[sensor["field"]] = round(
-            sensor["base"] + (instance * sensor["step"]) + (cycle * sensor["step"]) + jitter,
-            1,
-        )
+    cycle = sequence // sensor_nodes
+    for field, spec in profile["fields"].items():
+        if "normal_values" in spec:
+            values = spec["normal_values"]
+            if INCIDENT_MODE and random.random() < 0.08:
+                values = spec.get("hazard_values", values)
+            reading[field] = random.choice(values)
+        elif "values" in spec:
+            reading[field] = spec["values"][(sequence + instance - 1) % len(spec["values"])]
+        else:
+            jitter = random.uniform(-0.3, 0.3) if field != "air_quality" else random.uniform(-8.0, 8.0)
+            reading[field] = round(
+                spec["base"] + (instance * spec["step"]) + (cycle * spec["step"]) + jitter,
+                1,
+            )
 
     return reading
 
@@ -125,7 +106,7 @@ def main():
     parser.add_argument("--port", type=int, default=9999, help="Destination UDP port.")
     parser.add_argument("--count", type=int, default=1, help="Number of readings to send. Use 0 for continuous mode.")
     parser.add_argument("--interval", type=float, default=0.5, help="Seconds between readings.")
-    parser.add_argument("--sensor-nodes", type=int, default=4, help="Number of logical sensor nodes to cycle through.")
+    parser.add_argument("--sensor-nodes", type=int, default=4, help="Number of logical industrial assets to cycle through.")
     parser.add_argument(
         "--legacy-temperature-only",
         action="store_true",

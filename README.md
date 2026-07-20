@@ -110,7 +110,7 @@ Common direct launcher options:
 | `--ap-mode wep` | Use a WEP AP for lab observation. |
 | `--ap-mode wpa2` | Use a WPA2-PSK AP. |
 | `--ap-mode macfilter` | Use MAC filtering for the Smart Building example activity. |
-| `--nodes N` | Set Smart Building or 6LoWPAN node count, 1-10. |
+| `--nodes N` | Set Smart Building room/zone count or 6LoWPAN industrial asset count, 1-10. |
 | `--patients N` | Set Medical IoT patient/wearable count, 1-10. |
 | `--capture-hints` | Print capture guidance for the selected scenario. |
 | `--stop` | Stop launcher-managed labs and dashboard processes. |

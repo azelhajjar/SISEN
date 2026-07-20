@@ -45,70 +45,106 @@ MACFILTER_ALLOWED_MACS = Path("/tmp/sisen-smart-building-allowed-macs.txt")
 DEFAULT_SENSOR_COUNT = 4
 MAX_SENSOR_COUNT = 10
 
-SENSOR_TYPES = [
+ROOM_PROFILES = [
     {
-        "prefix": "temp-sensor",
-        "sensor": "iot/sensors/temperature_sensor.py",
+        "label": "Room 101",
+        "prefix": "room-101",
+        "sensor_ids": ["TEMP-R101", "FIRE-R101", "OCC-R101", "GAS-R101"],
+        "sensors": [
+            {"sensor_id": "TEMP-R101", "sensor": "iot/sensors/temperature_sensor.py"},
+            {
+                "sensor_id": "FIRE-R101",
+                "sensor": "iot/sensors/hazard_sensor.py",
+                "hazard_field": "fire_alarm",
+                "hazard_label": "Fire Alarm",
+                "normal_values": "Normal",
+                "hazard_values": "Fire detected",
+            },
+            {"sensor_id": "OCC-R101", "sensor": "iot/sensors/occupancy_sensor.py"},
+            {
+                "sensor_id": "GAS-R101",
+                "sensor": "iot/sensors/hazard_sensor.py",
+                "hazard_field": "gas_leak",
+                "hazard_label": "Gas Leak Detector",
+                "normal_values": "Normal",
+                "hazard_values": "Gas detected",
+            },
+        ],
     },
     {
-        "prefix": "fire-alarm",
-        "sensor": "iot/sensors/hazard_sensor.py",
-        "hazard_field": "fire_alarm",
-        "hazard_label": "Fire Alarm",
-        "normal_values": "Normal",
-        "hazard_values": "Fire detected",
+        "label": "Plant Room",
+        "prefix": "plant-room",
+        "sensor_ids": ["HUM-PLANT", "AIR-PLANT", "SMOKE-PLANT", "CO2-PLANT"],
+        "sensors": [
+            {"sensor_id": "HUM-PLANT", "sensor": "iot/sensors/humidity_sensor.py"},
+            {"sensor_id": "AIR-PLANT", "sensor": "iot/sensors/air_quality_sensor.py"},
+            {
+                "sensor_id": "SMOKE-PLANT",
+                "sensor": "iot/sensors/hazard_sensor.py",
+                "hazard_field": "smoke",
+                "hazard_label": "Smoke Detector",
+                "normal_values": "Clear",
+                "hazard_values": "Smoke detected",
+            },
+            {
+                "sensor_id": "CO2-PLANT",
+                "sensor": "iot/sensors/hazard_sensor.py",
+                "hazard_field": "co2",
+                "hazard_label": "CO2 Detector",
+                "normal_values": "Normal",
+                "hazard_values": "High CO2",
+            },
+        ],
     },
     {
-        "prefix": "occupancy",
-        "sensor": "iot/sensors/occupancy_sensor.py",
+        "label": "Server Room",
+        "prefix": "server-room",
+        "sensor_ids": ["TEMP-SRV", "SMOKE-SRV", "SPRINKLER-SRV", "EXIT-SRV"],
+        "sensors": [
+            {"sensor_id": "TEMP-SRV", "sensor": "iot/sensors/temperature_sensor.py"},
+            {
+                "sensor_id": "SMOKE-SRV",
+                "sensor": "iot/sensors/hazard_sensor.py",
+                "hazard_field": "smoke",
+                "hazard_label": "Smoke Detector",
+                "normal_values": "Clear",
+                "hazard_values": "Smoke detected",
+            },
+            {
+                "sensor_id": "SPRINKLER-SRV",
+                "sensor": "iot/sensors/hazard_sensor.py",
+                "hazard_field": "sprinkler_status",
+                "hazard_label": "Sprinkler Status",
+                "normal_values": "Standby",
+                "hazard_values": "Disabled",
+            },
+            {
+                "sensor_id": "EXIT-SRV",
+                "sensor": "iot/sensors/hazard_sensor.py",
+                "hazard_field": "exit_status",
+                "hazard_label": "Emergency Exit",
+                "normal_values": "Clear",
+                "hazard_values": "Blocked",
+            },
+        ],
     },
     {
-        "prefix": "gas-leak",
-        "sensor": "iot/sensors/hazard_sensor.py",
-        "hazard_field": "gas_leak",
-        "hazard_label": "Gas Leak Detector",
-        "normal_values": "Normal",
-        "hazard_values": "Gas detected",
-    },
-    {
-        "prefix": "humidity-sensor",
-        "sensor": "iot/sensors/humidity_sensor.py",
-    },
-    {
-        "prefix": "air-quality",
-        "sensor": "iot/sensors/air_quality_sensor.py",
-    },
-    {
-        "prefix": "smoke-detector",
-        "sensor": "iot/sensors/hazard_sensor.py",
-        "hazard_field": "smoke",
-        "hazard_label": "Smoke Detector",
-        "normal_values": "Clear",
-        "hazard_values": "Smoke detected",
-    },
-    {
-        "prefix": "co2-detector",
-        "sensor": "iot/sensors/hazard_sensor.py",
-        "hazard_field": "co2",
-        "hazard_label": "CO2 Detector",
-        "normal_values": "Normal",
-        "hazard_values": "High CO2",
-    },
-    {
-        "prefix": "exit-status",
-        "sensor": "iot/sensors/hazard_sensor.py",
-        "hazard_field": "exit_status",
-        "hazard_label": "Emergency Exit",
-        "normal_values": "Clear",
-        "hazard_values": "Blocked",
-    },
-    {
-        "prefix": "sprinkler-status",
-        "sensor": "iot/sensors/hazard_sensor.py",
-        "hazard_field": "sprinkler_status",
-        "hazard_label": "Sprinkler Status",
-        "normal_values": "Standby",
-        "hazard_values": "Disabled",
+        "label": "Workshop",
+        "prefix": "workshop",
+        "sensor_ids": ["TEMP-WORK", "AIR-WORK", "OCC-WORK", "GAS-WORK"],
+        "sensors": [
+            {"sensor_id": "TEMP-WORK", "sensor": "iot/sensors/temperature_sensor.py"},
+            {"sensor_id": "AIR-WORK", "sensor": "iot/sensors/air_quality_sensor.py"},
+            {"sensor_id": "OCC-WORK", "sensor": "iot/sensors/occupancy_sensor.py"},
+            {
+                "sensor_id": "GAS-WORK",
+                "sensor": "iot/sensors/hazard_sensor.py",
+                "hazard_field": "gas_leak",
+                "hazard_label": "Gas Leak Detector",
+                "normal_values": "Normal",
+                "hazard_values": "Gas detected",
+            },
+        ],
     },
 ]
 
@@ -130,25 +166,21 @@ def sensor_count_from_env():
 
 def build_devices():
     devices = []
-    type_counts = {sensor_type["prefix"]: 0 for sensor_type in SENSOR_TYPES}
-
     for index in range(sensor_count_from_env()):
-        sensor_type = SENSOR_TYPES[index % len(SENSOR_TYPES)]
-        prefix = sensor_type["prefix"]
-        type_counts[prefix] += 1
+        room = ROOM_PROFILES[index % len(ROOM_PROFILES)]
+        instance = (index // len(ROOM_PROFILES)) + 1
+        suffix = f"-{instance}" if instance > 1 else ""
 
         devices.append(
             {
                 "node_id": f"node-{index + 1:02d}",
-                "namespace": f"{prefix}-{type_counts[prefix]}",
+                "namespace": f"{room['prefix']}{suffix}",
+                "label": room["label"] if instance == 1 else f"{room['label']} {instance}",
                 "wlan": f"wlan{index + 1}",
                 "mac": f"02:60:00:00:00:{index + 1:02x}",
                 "ip": f"192.168.60.{10 + index}",
-                "sensor": sensor_type["sensor"],
-                "hazard_field": sensor_type.get("hazard_field", ""),
-                "hazard_label": sensor_type.get("hazard_label", ""),
-                "normal_values": sensor_type.get("normal_values", ""),
-                "hazard_values": sensor_type.get("hazard_values", ""),
+                "sensor_ids": room["sensor_ids"],
+                "sensors": room["sensors"],
             }
         )
 
@@ -184,7 +216,7 @@ def print_capture_hints(ap_mode):
     print("Smart Building capture points")
     print(f"Scenario: smart-building")
     print(f"SSID/AP: {AP_SSID} on {AP_INTERFACE}")
-    print(f"Sensor nodes: {len(DEVICES)}")
+    print(f"Room/zone groups: {len(DEVICES)}")
     print("MQTT topics: building/#")
     print("Topology is up and clients are associated. Suggested capture commands:")
     print(f"  sudo tcpdump -i {AP_INTERFACE} -n -vv -s 0 -Z \"$USER\" -w {capture_dir / 'smart-building-ap-wlan0.pcap'}")
@@ -392,12 +424,12 @@ def connect_client(device, ap_mode):
     ])
 
 
-def launch_sensor(device):
-    log_path = f"/tmp/hwsim-{device['namespace']}-sensor.log"
+def launch_sensor(device, sensor):
+    log_path = f"/tmp/hwsim-{device['namespace']}-{sensor['sensor_id']}.log"
 
     log_file = open(log_path, "w")
 
-    subprocess.Popen(
+    process = subprocess.Popen(
         [
             "sudo",
             "ip",
@@ -406,19 +438,22 @@ def launch_sensor(device):
             device["namespace"],
             "env",
             f"SISEN_NODE_ID={device['node_id']}",
-            f"SISEN_HAZARD_FIELD={device['hazard_field']}",
-            f"SISEN_HAZARD_LABEL={device['hazard_label']}",
-            f"SISEN_NORMAL_VALUES={device['normal_values']}",
-            f"SISEN_HAZARD_VALUES={device['hazard_values']}",
+            f"SISEN_SENSOR_ID={sensor['sensor_id']}",
+            f"SISEN_HAZARD_FIELD={sensor.get('hazard_field', '')}",
+            f"SISEN_HAZARD_LABEL={sensor.get('hazard_label', '')}",
+            f"SISEN_NORMAL_VALUES={sensor.get('normal_values', '')}",
+            f"SISEN_HAZARD_VALUES={sensor.get('hazard_values', '')}",
             str(PYTHON),
             "-u",
-            str(PROJECT_ROOT / device["sensor"]),
+            str(PROJECT_ROOT / sensor["sensor"]),
         ],
         stdout=log_file,
         stderr=subprocess.STDOUT,
     )
 
-    print(f"Started sensor for {device['namespace']}")
+    time.sleep(1)
+    ensure_process_running(process, f"{device['namespace']} {sensor['sensor_id']} sensor", log_path)
+    print(f"Started {sensor['sensor_id']} for {device['namespace']}")
     print(f"  Log: {log_path}")
 
 def launch_dashboard():
@@ -496,7 +531,8 @@ def main():
         print_capture_hints(args.ap_mode)
 
     for device in DEVICES:
-        launch_sensor(device)
+        for sensor in device["sensors"]:
+            launch_sensor(device, sensor)
 
     print("HWSIM IoT lab started")
     if should_wait:

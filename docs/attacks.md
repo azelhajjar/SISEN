@@ -74,7 +74,7 @@ python3 attacks/run_attack.py --category availability --scenario building --atta
 Availability attacks that affect interfaces need `sudo`:
 
 ```bash
-sudo python3 attacks/run_attack.py --category availability --scenario building --attack client-drop --target temperature
+sudo python3 attacks/run_attack.py --category availability --scenario building --attack client-drop --target room-101
 sudo python3 attacks/run_attack.py --category availability --scenario building --attack sensor-blackout --duration 10
 ```
 

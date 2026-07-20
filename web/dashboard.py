@@ -202,6 +202,92 @@ INDUSTRIAL_SENSOR_TYPES = [
     },
 ]
 
+BUILDING_ROOM_CARDS = [
+    {
+        "label": "Room 101",
+        "sensor_ids": "TEMP-R101, FIRE-R101, OCC-R101, GAS-R101",
+        "items": [
+            ("Temperature", "temperature", "°C"),
+            ("Fire alarm", "fire_alarm", ""),
+            ("Occupancy", "occupancy", ""),
+            ("Gas leak", "gas_leak", ""),
+        ],
+    },
+    {
+        "label": "Plant Room",
+        "sensor_ids": "HUM-PLANT, AIR-PLANT, SMOKE-PLANT, CO2-PLANT",
+        "items": [
+            ("Humidity", "humidity", "%"),
+            ("Air quality", "air_quality", "ppm"),
+            ("Smoke", "smoke", ""),
+            ("CO2", "co2", ""),
+        ],
+    },
+    {
+        "label": "Server Room",
+        "sensor_ids": "TEMP-SRV, SMOKE-SRV, SPRINKLER-SRV, EXIT-SRV",
+        "items": [
+            ("Temperature", "temperature", "°C"),
+            ("Smoke", "smoke", ""),
+            ("Sprinkler", "sprinkler_status", ""),
+            ("Emergency exit", "exit_status", ""),
+        ],
+    },
+    {
+        "label": "Workshop",
+        "sensor_ids": "TEMP-WORK, AIR-WORK, OCC-WORK, GAS-WORK",
+        "items": [
+            ("Temperature", "temperature", "°C"),
+            ("Air quality", "air_quality", "ppm"),
+            ("Occupancy", "occupancy", ""),
+            ("Gas leak", "gas_leak", ""),
+        ],
+    },
+]
+
+INDUSTRIAL_ASSET_CARDS = [
+    {
+        "label": "Boiler Room",
+        "sensor_ids": "TEMP-BLR, GAS-BLR, PRESS-BLR, ESTOP-BLR",
+        "items": [
+            ("Temperature", "temperature", "°C"),
+            ("Gas leak", "gas_leak", ""),
+            ("Pressure", "pressure_status", ""),
+            ("Emergency stop", "emergency_stop", ""),
+        ],
+    },
+    {
+        "label": "Process Line",
+        "sensor_ids": "TEMP-LINE, HUM-LINE, OVERHEAT-LINE, ESTOP-LINE",
+        "items": [
+            ("Temperature", "temperature", "°C"),
+            ("Humidity", "humidity", "%"),
+            ("Machine overheat", "machine_overheat", ""),
+            ("Emergency stop", "emergency_stop", ""),
+        ],
+    },
+    {
+        "label": "Cold Storage",
+        "sensor_ids": "TEMP-COLD, HUM-COLD, DOOR-COLD, AIR-COLD",
+        "items": [
+            ("Temperature", "temperature", "°C"),
+            ("Humidity", "humidity", "%"),
+            ("Occupancy", "occupancy", ""),
+            ("Air quality", "air_quality", "ppm"),
+        ],
+    },
+    {
+        "label": "Loading Bay",
+        "sensor_ids": "TEMP-BAY, GAS-BAY, OCC-BAY, AIR-BAY",
+        "items": [
+            ("Temperature", "temperature", "°C"),
+            ("Gas leak", "gas_leak", ""),
+            ("Occupancy", "occupancy", ""),
+            ("Air quality", "air_quality", "ppm"),
+        ],
+    },
+]
+
 
 def hwsim_client_index(mac):
     parts = str(mac or "").lower().split(":")
@@ -282,68 +368,30 @@ def building_nodes(ap_status, data):
             for index in range(1, 5)
         ]
 
-    client_map = {index: client for index, client in clients}
     online = data.get("status") == "ONLINE"
-    cards = [
-        {
-            "label": "Room 101 Safety Context",
-            "detail": "nodes 01-04",
-            "items": [
-                ("Temperature", "node-01", "temperature", "°C"),
-                ("Fire alarm", "node-02", "fire_alarm", ""),
-                ("Occupancy", "node-03", "occupancy", ""),
-                ("Gas leak", "node-04", "gas_leak", ""),
-            ],
-            "indexes": [1, 2, 3, 4],
-        },
-        {
-            "label": "Plant And Air Safety Context",
-            "detail": "nodes 05-08",
-            "items": [
-                ("Humidity", "node-05", "humidity", "%"),
-                ("Air quality", "node-06", "air_quality", "ppm"),
-                ("Smoke", "node-07", "smoke", ""),
-                ("CO2", "node-08", "co2", ""),
-            ],
-            "indexes": [5, 6, 7, 8],
-        },
-        {
-            "label": "Egress And Response Context",
-            "detail": "nodes 09-10",
-            "items": [
-                ("Emergency exit", "node-09", "exit_status", ""),
-                ("Sprinkler", "node-10", "sprinkler_status", ""),
-            ],
-            "indexes": [9, 10],
-        },
-    ]
-
+    client_map = {index: client for index, client in clients}
     visible_cards = []
     visible_indexes = {index for index, _client in clients}
     if not visible_indexes:
         visible_indexes = {1, 2, 3, 4}
 
-    for card in cards:
-        if not any(index in visible_indexes for index in card["indexes"]):
+    for index in sorted(visible_indexes):
+        card = BUILDING_ROOM_CARDS[(index - 1) % len(BUILDING_ROOM_CARDS)]
+        instance = ((index - 1) // len(BUILDING_ROOM_CARDS)) + 1
+        label = card["label"] if instance == 1 else f"{card['label']} {instance}"
+        node_id = f"node-{index:02d}"
+        if index not in visible_indexes:
             continue
         metrics = []
-        for label, node_id, field, unit in card["items"]:
+        for metric_label, field, unit in card["items"]:
             value = node_value(data, "building_node_values", node_id, field)
-            metrics.append(composite_metric(label, field, unit, value, online))
+            metrics.append(composite_metric(metric_label, field, unit, value, online))
         statuses = [metric["status"] for metric in metrics]
-        macs = [
-            client_map[index].get("mac", "")
-            for index in card["indexes"]
-            if index in client_map and client_map[index].get("mac")
-        ]
-        detail = card["detail"]
-        if macs:
-            detail = f"{detail} · {len(macs)} associated sensors"
         visible_cards.append(
             {
-                "label": card["label"],
+                "label": label,
                 "metrics": metrics,
-                "detail": detail,
+                "detail": f"{node_id} · Sensor IDs: {card['sensor_ids']}",
                 "status": strongest_status(statuses),
             }
         )
@@ -362,45 +410,22 @@ def read_6lowpan_sensor_count():
 def sixlowpan_nodes(data):
     sensor_count = read_6lowpan_sensor_count()
     online = data.get("status") == "ONLINE"
-    cards = [
-        {
-            "label": "Boiler Room Safety Context",
-            "detail": "industrial nodes 01-04",
-            "items": [
-                ("Temperature", "node-01", "temperature", "°C"),
-                ("Gas leak", "node-02", "gas_leak", ""),
-                ("Pressure", "node-03", "pressure_status", ""),
-                ("Emergency stop", "node-04", "emergency_stop", ""),
-            ],
-            "indexes": [1, 2, 3, 4],
-        },
-        {
-            "label": "Process Line Operating Context",
-            "detail": "industrial nodes 05-08",
-            "items": [
-                ("Humidity", "node-05", "humidity", "%"),
-                ("Occupancy", "node-06", "occupancy", ""),
-                ("Air quality", "node-07", "air_quality", "ppm"),
-                ("Machine overheat", "node-08", "machine_overheat", ""),
-            ],
-            "indexes": [5, 6, 7, 8],
-        },
-    ]
-
     visible_cards = []
-    for card in cards:
-        if not any(index <= sensor_count for index in card["indexes"]):
-            continue
+    for index in range(1, sensor_count + 1):
+        card = INDUSTRIAL_ASSET_CARDS[(index - 1) % len(INDUSTRIAL_ASSET_CARDS)]
+        instance = ((index - 1) // len(INDUSTRIAL_ASSET_CARDS)) + 1
+        label = card["label"] if instance == 1 else f"{card['label']} {instance}"
+        node_id = f"node-{index:02d}"
         metrics = []
-        for label, node_id, field, unit in card["items"]:
+        for metric_label, field, unit in card["items"]:
             value = node_value(data, "sixlowpan_node_values", node_id, field)
-            metrics.append(composite_metric(label, field, unit, value, online))
+            metrics.append(composite_metric(metric_label, field, unit, value, online))
         statuses = [metric["status"] for metric in metrics]
         visible_cards.append(
             {
-                "label": card["label"],
+                "label": label,
                 "metrics": metrics,
-                "detail": card["detail"],
+                "detail": f"{node_id} · Sensor IDs: {card['sensor_ids']}",
                 "status": strongest_status(statuses),
             }
         )
@@ -1257,7 +1282,7 @@ def _scenario_guidance():
                 "python3 attacks/run_attack.py --category replay --scenario building --attack replay",
                 "# Availability and disruption attacks",
                 "python3 attacks/run_attack.py --category availability --scenario building --attack noise --count 5",
-                "sudo python3 attacks/run_attack.py --category availability --scenario building --attack client-drop --target temperature",
+                "sudo python3 attacks/run_attack.py --category availability --scenario building --attack client-drop --target room-101",
                 "sudo python3 attacks/run_attack.py --category availability --scenario building --attack sensor-blackout --duration 10",
                 "# Scenario-focused examples",
                 "python3 attacks/run_attack.py --category authenticity --scenario building --attack false-occupancy",
@@ -1270,8 +1295,8 @@ def _scenario_guidance():
                 "ip -brief addr",
                 "# Observation and confidentiality evidence",
                 f"sudo tcpdump -i wlan0 -n -vv -s 0 -Z \"$USER\" -w {capture_path('building', 'smart-building-ap-wlan0.pcap')}",
-                "# 802.11 sensor-path evidence; --capture-hints prints the full current node list",
-                f"sudo ip netns exec temp-sensor-1 tcpdump -i wlan1 -n -vv -s 0 -Z \"$USER\" -w {capture_path('building', 'smart-building-temp-sensor-1.pcap')}",
+                "# 802.11 room/zone path evidence; --capture-hints prints the full current node list",
+                f"sudo ip netns exec room-101 tcpdump -i wlan1 -n -vv -s 0 -Z \"$USER\" -w {capture_path('building', 'smart-building-room-101.pcap')}",
                 "# MQTT telemetry and attack-impact evidence",
                 f"sudo tcpdump -i any -n -vv -s 0 -Z \"$USER\" -w {capture_path('building', 'smart-building-mqtt-building.pcap')} port 1883",
                 "mosquitto_sub -h localhost -v -t 'building/#'",

@@ -106,11 +106,11 @@ python3 launch_sisen.py --scenario smart-building --ap-mode open --nodes 4
 
 The dashboard infrastructure panel shows the active AP/backhaul mode, SSID, IP address, AP status, and associated stations where relevant.
 
-For Smart Building, associated stations usually correspond to simulated sensor nodes.
+For Smart Building, associated stations usually correspond to simulated room/zone groups.
 
 For Medical IoT, associated stations usually means the Wi-Fi gateway station. Patients/wearables are shown separately in the dashboard.
 
-For 6LoWPAN, sensor nodes are low-power topology nodes, not normal Wi-Fi stations.
+For 6LoWPAN, the dashboard count represents industrial telemetry assets, not normal Wi-Fi stations.
 
 ## MQTT Issues
 

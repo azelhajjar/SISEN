@@ -479,7 +479,7 @@ print_capture_hints() {
 Capture hints:
   Scenario: 6lowpan
   SSID/AP: SISEN-6LOWPAN-* on ${AP_INTERFACE:-wlan0} when AP mode is enabled
-  Industrial sensor nodes: $SENSOR_NODES
+  Industrial assets: $SENSOR_NODES
   MQTT topics: $MQTT_TOPIC and industrial/6lowpan/nodes/#
 
   sudo tcpdump -i any -n -vv -s 0 -Z "\$USER" -w $capture_dir/6lowpan-mqtt-dashboard.pcap port $DASHBOARD_MQTT_PORT
