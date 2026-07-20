@@ -42,7 +42,13 @@ AP_MODE_MENU = (
     ("wep", "WEP AP"),
     ("wpa2", "WPA2-PSK AP"),
 )
-SMART_BUILDING_NAMESPACE_PREFIXES = (
+SMART_BUILDING_ROOM_PREFIXES = (
+    "room-101",
+    "plant-room",
+    "server-room",
+    "workshop",
+)
+SMART_BUILDING_LEGACY_NAMESPACE_PREFIXES = (
     "temp-sensor",
     "humidity-sensor",
     "air-quality",
@@ -206,11 +212,20 @@ def cleanup_command(cmd):
 
 
 def smart_building_namespaces():
-    return [
+    current_namespaces = []
+    for index in range(MAX_NODE_COUNT):
+        prefix = SMART_BUILDING_ROOM_PREFIXES[index % len(SMART_BUILDING_ROOM_PREFIXES)]
+        instance = (index // len(SMART_BUILDING_ROOM_PREFIXES)) + 1
+        suffix = f"-{instance}" if instance > 1 else ""
+        current_namespaces.append(f"{prefix}{suffix}")
+
+    legacy_namespaces = [
         f"{prefix}-{index}"
         for index in range(1, MAX_NODE_COUNT + 1)
-        for prefix in SMART_BUILDING_NAMESPACE_PREFIXES
+        for prefix in SMART_BUILDING_LEGACY_NAMESPACE_PREFIXES
     ]
+
+    return [*current_namespaces, *legacy_namespaces]
 
 
 def cleanup_smart_building_lab():
