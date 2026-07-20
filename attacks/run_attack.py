@@ -46,14 +46,14 @@ CATALOG = [
         "category": "availability",
         "scenario": "building",
         "attack": "client-drop",
-        "description": "Temporarily disconnect one Smart Building sensor interface.",
+        "description": "Temporarily disconnect one Smart Building room/zone interface.",
         "engine": "wifi",
     },
     {
         "category": "availability",
         "scenario": "building",
         "attack": "sensor-blackout",
-        "description": "Temporarily disconnect all Smart Building sensor interfaces.",
+        "description": "Temporarily disconnect all Smart Building room/zone interfaces.",
         "engine": "wifi",
     },
     {
@@ -190,25 +190,31 @@ CATALOG.extend(
             "manual_focus": "6LoWPAN path tracing",
         },
         {
-            "category": "authenticity",
+            "category": "safety-case",
             "scenario": "building",
-            "attack": "false-occupancy",
-            "description": "Smart Building scenario shorthand for spoofed occupancy/environment telemetry.",
+            "attack": "gas-leak-hidden",
+            "description": "Room 101 shows gas leak as normal while occupancy and temperature remain plausible.",
             "engine": "mqtt",
-            "engine_attack": "spoofed",
             "featured": True,
         },
         {
-            "category": "integrity",
+            "category": "safety-case",
             "scenario": "building",
-            "attack": "environment-extreme",
-            "description": "Smart Building scenario shorthand for unsafe environment values.",
+            "attack": "fire-alarm-suppressed",
+            "description": "Room 101 shows the fire alarm as normal while temperature suggests unsafe conditions.",
             "engine": "mqtt",
-            "engine_attack": "extreme",
             "featured": True,
         },
         {
-            "category": "integrity",
+            "category": "safety-case",
+            "scenario": "building",
+            "attack": "blocked-exit-hidden",
+            "description": "Server Room shows smoke while exit and sprinkler status remain falsely reassuring.",
+            "engine": "mqtt",
+            "featured": True,
+        },
+        {
+            "category": "safety-case",
             "scenario": "medical",
             "attack": "critical-vitals",
             "description": "Medical IoT shorthand for unsafe patient vital signs.",
@@ -217,21 +223,51 @@ CATALOG.extend(
             "featured": True,
         },
         {
-            "category": "replay",
+            "category": "safety-case",
             "scenario": "medical",
-            "attack": "stale-vitals",
-            "description": "Medical IoT shorthand for replayed patient vital signs.",
+            "attack": "fall-alert-suppressed",
+            "description": "Patient 1 shows concerning vitals while the fall alert remains falsely normal.",
             "engine": "mqtt",
-            "engine_attack": "replay",
             "featured": True,
         },
         {
-            "category": "authenticity",
+            "category": "safety-case",
+            "scenario": "medical",
+            "attack": "panic-button-suppressed",
+            "description": "Patient 1 shows unsafe vitals while the panic button remains falsely normal.",
+            "engine": "mqtt",
+            "featured": True,
+        },
+        {
+            "category": "safety-case",
+            "scenario": "medical",
+            "attack": "battery-falsely-normal",
+            "description": "Patient 1 reports battery as normal, illustrating hidden wearable reliability risk.",
+            "engine": "mqtt",
+            "featured": True,
+        },
+        {
+            "category": "safety-case",
             "scenario": "6lowpan",
-            "attack": "rogue-sensor",
-            "description": "6LoWPAN scenario shorthand for spoofed sensor identity.",
+            "attack": "boiler-pressure-masked",
+            "description": "Boiler Room pressure is reported normal while other process readings suggest danger.",
             "engine": "6lowpan",
-            "engine_attack": "spoofed",
+            "featured": True,
+        },
+        {
+            "category": "safety-case",
+            "scenario": "6lowpan",
+            "attack": "emergency-stop-hidden",
+            "description": "Boiler Room emergency stop remains falsely ready during abnormal pressure.",
+            "engine": "6lowpan",
+            "featured": True,
+        },
+        {
+            "category": "safety-case",
+            "scenario": "6lowpan",
+            "attack": "machine-overheat-hidden",
+            "description": "Process Line overheat is hidden while the temperature is unsafe.",
+            "engine": "6lowpan",
             "featured": True,
         },
     ]
@@ -433,7 +469,7 @@ def parse_args():
     parser.add_argument("--category", choices=sorted(CATEGORY_LABELS))
     parser.add_argument("--scenario", help="Scenario name, for example building, medical, or 6lowpan.")
     parser.add_argument("--attack", help="Attack name within the selected category and scenario.")
-    parser.add_argument("--target", default="temperature", help="Smart Building client-drop target.")
+    parser.add_argument("--target", default="room-101", help="Smart Building client-drop target.")
     parser.add_argument("--duration", type=int, default=10, help="Infrastructure disruption duration in seconds.")
     parser.add_argument("--host", default="localhost", help="MQTT broker host.")
     parser.add_argument("--port", type=int, default=1883, help="MQTT broker port.")

@@ -23,6 +23,13 @@ SCENARIOS = {
             "occupancy": "building/occupancy",
             "fire_alarm": "building/fire_alarm",
             "gas_leak": "building/gas_leak",
+            "node_01_temperature": "building/nodes/node-01/temperature",
+            "node_01_fire_alarm": "building/nodes/node-01/fire_alarm",
+            "node_01_occupancy": "building/nodes/node-01/occupancy",
+            "node_01_gas_leak": "building/nodes/node-01/gas_leak",
+            "node_03_smoke": "building/nodes/node-03/smoke",
+            "node_03_exit_status": "building/nodes/node-03/exit_status",
+            "node_03_sprinkler_status": "building/nodes/node-03/sprinkler_status",
         },
         "spoofed": {
             "temperature": "23.40",
@@ -55,6 +62,21 @@ SCENARIOS = {
             "occupancy": "",
             "fire_alarm": "???",
             "gas_leak": "",
+        },
+        "gas-leak-hidden": {
+            "node_01_gas_leak": "Normal",
+            "node_01_occupancy": "Occupied",
+            "node_01_temperature": "23.10",
+        },
+        "fire-alarm-suppressed": {
+            "node_01_fire_alarm": "Normal",
+            "node_01_occupancy": "Occupied",
+            "node_01_temperature": "72.50",
+        },
+        "blocked-exit-hidden": {
+            "node_03_smoke": "Smoke detected",
+            "node_03_exit_status": "Clear",
+            "node_03_sprinkler_status": "Standby",
         },
     },
     "medical": {
@@ -99,12 +121,39 @@ SCENARIOS = {
             "panic_button": "maybe",
             "battery_status": "",
         },
+        "fall-alert-suppressed": {
+            "heart_rate": "112",
+            "spo2": "93",
+            "blood_pressure": "148/96",
+            "fall_alert": "No fall",
+            "panic_button": "Not pressed",
+            "battery_status": "Normal",
+        },
+        "battery-falsely-normal": {
+            "heart_rate": "76",
+            "spo2": "98",
+            "blood_pressure": "122/78",
+            "fall_alert": "No fall",
+            "panic_button": "Not pressed",
+            "battery_status": "Normal",
+        },
+        "panic-button-suppressed": {
+            "heart_rate": "132",
+            "spo2": "91",
+            "blood_pressure": "176/110",
+            "fall_alert": "No fall",
+            "panic_button": "Not pressed",
+            "battery_status": "Normal",
+        },
     },
 }
 SCENARIO_ALIASES = {}
 
 
-ATTACKS = ("spoofed", "extreme", "replay", "noise", "malformed")
+ATTACKS = tuple(
+    sorted({attack for profile in SCENARIOS.values() for attack in profile if attack not in ("description", "topics")})
+    + ["noise"]
+)
 
 
 def publish_payloads(host, port, topics, payloads, delay):
@@ -127,11 +176,16 @@ def run_attack(args):
     print()
 
     if args.attack == "noise":
+        if "spoofed" not in profile:
+            raise SystemExit(f"Noise attack is not defined for scenario {scenario}.")
         payloads = profile["spoofed"]
         for index in range(args.count):
             print(f"Noise burst {index + 1}/{args.count}")
             publish_payloads(args.host, args.port, topics, payloads, args.delay)
         return
+
+    if args.attack not in profile:
+        raise SystemExit(f"Attack {args.attack} is not defined for scenario {scenario}.")
 
     payloads = profile[args.attack]
     repeat_count = args.count if args.attack == "replay" else 1

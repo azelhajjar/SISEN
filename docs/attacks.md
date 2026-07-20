@@ -78,11 +78,12 @@ sudo python3 attacks/run_attack.py --category availability --scenario building -
 sudo python3 attacks/run_attack.py --category availability --scenario building --attack sensor-blackout --duration 10
 ```
 
-Scenario-focused examples:
+Scenario-focused safety cases:
 
 ```bash
-python3 attacks/run_attack.py --category authenticity --scenario building --attack false-occupancy
-python3 attacks/run_attack.py --category integrity --scenario building --attack environment-extreme
+python3 attacks/run_attack.py --category safety-case --scenario building --attack gas-leak-hidden
+python3 attacks/run_attack.py --category safety-case --scenario building --attack fire-alarm-suppressed
+python3 attacks/run_attack.py --category safety-case --scenario building --attack blocked-exit-hidden
 ```
 
 Smart Building also supports the manual MAC filtering activity when launched with `--ap-mode macfilter`.
@@ -104,11 +105,13 @@ python3 attacks/run_attack.py --category integrity --scenario medical --attack m
 python3 attacks/run_attack.py --category replay --scenario medical --attack replay
 ```
 
-Scenario-focused examples:
+Scenario-focused safety cases:
 
 ```bash
-python3 attacks/run_attack.py --category integrity --scenario medical --attack critical-vitals
-python3 attacks/run_attack.py --category replay --scenario medical --attack stale-vitals
+python3 attacks/run_attack.py --category safety-case --scenario medical --attack critical-vitals
+python3 attacks/run_attack.py --category safety-case --scenario medical --attack fall-alert-suppressed
+python3 attacks/run_attack.py --category safety-case --scenario medical --attack panic-button-suppressed
+python3 attacks/run_attack.py --category safety-case --scenario medical --attack battery-falsely-normal
 ```
 
 ## 6LoWPAN Attacks
@@ -128,10 +131,12 @@ python3 attacks/run_attack.py --category protocol --scenario 6lowpan --attack mi
 python3 attacks/run_attack.py --category protocol --scenario 6lowpan --attack replay
 ```
 
-Scenario-focused example:
+Scenario-focused safety cases:
 
 ```bash
-python3 attacks/run_attack.py --category authenticity --scenario 6lowpan --attack rogue-sensor
+python3 attacks/run_attack.py --category safety-case --scenario 6lowpan --attack boiler-pressure-masked
+python3 attacks/run_attack.py --category safety-case --scenario 6lowpan --attack emergency-stop-hidden
+python3 attacks/run_attack.py --category safety-case --scenario 6lowpan --attack machine-overheat-hidden
 ```
 
 ## Manual Infrastructure Activities

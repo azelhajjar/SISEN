@@ -123,11 +123,12 @@ sudo python3 attacks/run_attack.py --category availability --scenario building -
 sudo python3 attacks/run_attack.py --category availability --scenario building --attack sensor-blackout --duration 10
 ```
 
-Scenario-focused examples:
+Scenario-focused safety cases:
 
 ```bash
-python3 attacks/run_attack.py --category authenticity --scenario building --attack false-occupancy
-python3 attacks/run_attack.py --category integrity --scenario building --attack environment-extreme
+python3 attacks/run_attack.py --category safety-case --scenario building --attack gas-leak-hidden
+python3 attacks/run_attack.py --category safety-case --scenario building --attack fire-alarm-suppressed
+python3 attacks/run_attack.py --category safety-case --scenario building --attack blocked-exit-hidden
 ```
 
 ## Captures To Collect

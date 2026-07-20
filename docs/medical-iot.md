@@ -115,11 +115,13 @@ python3 attacks/run_attack.py --category integrity --scenario medical --attack m
 python3 attacks/run_attack.py --category replay --scenario medical --attack replay
 ```
 
-Scenario-focused examples:
+Scenario-focused safety cases:
 
 ```bash
-python3 attacks/run_attack.py --category integrity --scenario medical --attack critical-vitals
-python3 attacks/run_attack.py --category replay --scenario medical --attack stale-vitals
+python3 attacks/run_attack.py --category safety-case --scenario medical --attack critical-vitals
+python3 attacks/run_attack.py --category safety-case --scenario medical --attack fall-alert-suppressed
+python3 attacks/run_attack.py --category safety-case --scenario medical --attack panic-button-suppressed
+python3 attacks/run_attack.py --category safety-case --scenario medical --attack battery-falsely-normal
 ```
 
 ## Captures To Collect

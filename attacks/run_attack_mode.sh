@@ -10,7 +10,7 @@ AP_PID=""
 
 usage() {
   cat >&2 <<'EOF'
-Usage: bash attacks/run_attack_mode.sh <normal|spoofed|spoof|missing|extreme|replay> [--interactive] [--ap-mode <mode>] [--keep-ap]
+Usage: bash attacks/run_attack_mode.sh <normal|spoofed|spoof|missing|extreme|replay|boiler-pressure-masked|emergency-stop-hidden|machine-overheat-hidden> [--interactive] [--ap-mode <mode>] [--keep-ap]
 
 Runs a selected Milestone 9 mode using the existing 6LoWPAN PoC runner.
 The underlying topology and attack traffic remain implemented by 6lowpan/run_poc.sh.
@@ -184,6 +184,11 @@ if [ "$active_lab" -eq 1 ] && [ -z "$interactive_arg" ]; then
       sudo ip netns exec node1 python3 "$POC_DIR/attacks/send_attack.py" --attack replay --source fd00:6:1::1 --dest fd00:6:3::2 --port 9999
       exit 0
       ;;
+    boiler-pressure-masked|emergency-stop-hidden|machine-overheat-hidden)
+      echo "Active full lab detected. Injecting safety-case telemetry without rebuilding topology."
+      sudo ip netns exec node1 python3 "$POC_DIR/attacks/send_attack.py" --attack "$mode" --source fd00:6:1::1 --dest fd00:6:3::2 --port 9999
+      exit 0
+      ;;
     normal)
       echo "Active full lab detected. Normal telemetry is already running."
       exit 0
@@ -213,6 +218,11 @@ case "$mode" in
   replay)
     echo "Running replay telemetry mode."
     sudo ./run_poc.sh ${interactive_arg:+"$interactive_arg"} --attack replay
+    ;;
+  boiler-pressure-masked|emergency-stop-hidden|machine-overheat-hidden)
+    echo "ERROR: $mode requires an already running 6LoWPAN scenario from launch_sisen.py." >&2
+    echo "Start the scenario first, then run this attack from a separate terminal." >&2
+    exit 1
     ;;
   *)
     usage

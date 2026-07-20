@@ -72,6 +72,55 @@ def missing_payloads():
     ]
 
 
+def boiler_pressure_masked_payloads():
+    return [
+        {
+            "sensor_id": "TEMP-BLR,GAS-BLR,PRESS-BLR,ESTOP-BLR",
+            "node_id": "node-01",
+            "label": "Boiler Room",
+            "temperature": 78.4,
+            "gas_leak": "Normal",
+            "pressure_status": "Normal",
+            "emergency_stop": "Ready",
+            "unit": "mixed",
+            "timestamp": utc_now(),
+            "attack": "boiler_pressure_masked",
+        }
+    ]
+
+
+def emergency_stop_hidden_payloads():
+    return [
+        {
+            "sensor_id": "TEMP-BLR,GAS-BLR,PRESS-BLR,ESTOP-BLR",
+            "node_id": "node-01",
+            "label": "Boiler Room",
+            "temperature": 74.9,
+            "pressure_status": "Pressure abnormal",
+            "emergency_stop": "Ready",
+            "unit": "mixed",
+            "timestamp": utc_now(),
+            "attack": "emergency_stop_hidden",
+        }
+    ]
+
+
+def machine_overheat_hidden_payloads():
+    return [
+        {
+            "sensor_id": "TEMP-LINE,HUM-LINE,OVERHEAT-LINE,ESTOP-LINE",
+            "node_id": "node-02",
+            "label": "Process Line",
+            "temperature": 86.3,
+            "machine_overheat": "Normal",
+            "emergency_stop": "Ready",
+            "unit": "mixed",
+            "timestamp": utc_now(),
+            "attack": "machine_overheat_hidden",
+        }
+    ]
+
+
 ATTACKS = {
     "spoof": {
         "payloads": spoof_payloads,
@@ -88,6 +137,18 @@ ATTACKS = {
     "missing": {
         "payloads": missing_payloads,
         "impact": "The air-quality sensor is omitted, showing loss of visibility rather than a malformed packet.",
+    },
+    "boiler-pressure-masked": {
+        "payloads": boiler_pressure_masked_payloads,
+        "impact": "Boiler Room pressure is reported normal while other process readings suggest a dangerous condition.",
+    },
+    "emergency-stop-hidden": {
+        "payloads": emergency_stop_hidden_payloads,
+        "impact": "Emergency stop status remains falsely ready during abnormal boiler pressure.",
+    },
+    "machine-overheat-hidden": {
+        "payloads": machine_overheat_hidden_payloads,
+        "impact": "Process Line overheat is hidden while temperature is unsafe.",
     },
 }
 

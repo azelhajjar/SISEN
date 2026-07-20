@@ -108,10 +108,12 @@ python3 attacks/run_attack.py --category protocol --scenario 6lowpan --attack mi
 python3 attacks/run_attack.py --category protocol --scenario 6lowpan --attack replay
 ```
 
-Scenario-focused example:
+Scenario-focused safety cases:
 
 ```bash
-python3 attacks/run_attack.py --category authenticity --scenario 6lowpan --attack rogue-sensor
+python3 attacks/run_attack.py --category safety-case --scenario 6lowpan --attack boiler-pressure-masked
+python3 attacks/run_attack.py --category safety-case --scenario 6lowpan --attack emergency-stop-hidden
+python3 attacks/run_attack.py --category safety-case --scenario 6lowpan --attack machine-overheat-hidden
 ```
 
 ## Captures To Collect
