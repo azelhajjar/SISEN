@@ -25,6 +25,7 @@ ip -brief addr
 ```
 
 The dashboard Capture Guidance panel also shows scenario-specific capture commands.
+**Note:** An empty folder named capture is included in the repository for storing all captured files generated during the activities.
 
 ## Smart Building Capture Points
 
