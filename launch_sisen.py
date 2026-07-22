@@ -231,6 +231,7 @@ def smart_building_namespaces():
 def cleanup_smart_building_lab():
     print("Stopping Smart Building lab processes...")
 
+    cleanup_command(["systemctl", "stop", "wpa_supplicant"])
     for process_name in ("wpa_supplicant", "hostapd", "dnsmasq"):
         cleanup_command(["pkill", process_name])
     for pattern in SMART_BUILDING_PROCESS_PATTERNS:

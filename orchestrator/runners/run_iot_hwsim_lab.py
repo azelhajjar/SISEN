@@ -250,6 +250,10 @@ def write_macfilter_allow_list(ap_mode):
 
 
 def load_hwsim():
+    subprocess.run(["systemctl", "stop", "wpa_supplicant"], check=False)
+    subprocess.run(["pkill", "wpa_supplicant"], check=False)
+    subprocess.run(["pkill", "hostapd"], check=False)
+
     existing_interfaces = subprocess.run(
         ["iw", "dev"],
         capture_output=True,
