@@ -132,6 +132,12 @@ def run(cmd, check=True):
     subprocess.run(cmd, check=check)
 
 
+def root_cmd(*cmd):
+    if os.name == "posix" and hasattr(os, "geteuid") and os.geteuid() == 0:
+        return list(cmd)
+    return ["sudo", *cmd]
+
+
 def print_log_tail(log_path, line_count=20):
     path = Path(log_path)
     if not path.exists():
@@ -172,7 +178,7 @@ def wait_for_tcp(host, port, timeout=10):
 
 def namespace_exists(namespace):
     result = subprocess.run(
-        ["sudo", "ip", "netns", "list"],
+        root_cmd("ip", "netns", "list"),
         capture_output=True,
         text=True,
         check=False,
@@ -182,7 +188,7 @@ def namespace_exists(namespace):
 
 def delete_namespace_if_exists(namespace):
     if namespace_exists(namespace):
-        run(["sudo", "ip", "netns", "delete", namespace])
+        run(root_cmd("ip", "netns", "delete", namespace))
 
 
 def load_hwsim():
@@ -190,8 +196,8 @@ def load_hwsim():
     subprocess.run(["pkill", "wpa_supplicant"], check=False)
     subprocess.run(["pkill", "hostapd"], check=False)
 
-    run(["sudo", "modprobe", "-r", "mac80211_hwsim"], check=False)
-    run(["sudo", "modprobe", "mac80211_hwsim", "radios=2"])
+    run(root_cmd("modprobe", "-r", "mac80211_hwsim"), check=False)
+    run(root_cmd("modprobe", "mac80211_hwsim", "radios=2"))
 
 
 def cleanup_stale_medical_gateway():
@@ -201,13 +207,13 @@ def cleanup_stale_medical_gateway():
         "medical-mosquitto.conf",
         "192.168.70.10,192.168.70.50",
     ):
-        run(["sudo", "pkill", "-f", pattern], check=False)
+        run(root_cmd("pkill", "-f", pattern), check=False)
     delete_namespace_if_exists(GATEWAY_NAMESPACE)
 
 
 def create_gateway_namespace():
     delete_namespace_if_exists(GATEWAY_NAMESPACE)
-    run(["sudo", "ip", "netns", "add", GATEWAY_NAMESPACE])
+    run(root_cmd("ip", "netns", "add", GATEWAY_NAMESPACE))
 
 
 def get_phy_for_interface(interface_name):
@@ -227,7 +233,7 @@ def get_phy_for_interface(interface_name):
 def move_gateway_wlan_to_namespace():
     phy = get_phy_for_interface(GATEWAY_INTERFACE)
     print(f"Moving {GATEWAY_INTERFACE} ({phy}) into namespace {GATEWAY_NAMESPACE}")
-    run(["sudo", "iw", "phy", phy, "set", "netns", "name", GATEWAY_NAMESPACE])
+    run(root_cmd("iw", "phy", phy, "set", "netns", "name", GATEWAY_NAMESPACE))
 
 
 def start_hostapd(ap_mode):
@@ -245,15 +251,15 @@ auth_algs=1
         encoding="utf-8",
     )
 
-    run(["sudo", "ip", "link", "set", AP_INTERFACE, "down"])
-    run(["sudo", "ip", "addr", "flush", "dev", AP_INTERFACE])
-    run(["sudo", "iw", "dev", AP_INTERFACE, "set", "type", "__ap"])
-    run(["sudo", "ip", "addr", "replace", f"{AP_IP}/24", "dev", AP_INTERFACE])
-    run(["sudo", "ip", "link", "set", AP_INTERFACE, "up"])
+    run(root_cmd("ip", "link", "set", AP_INTERFACE, "down"))
+    run(root_cmd("ip", "addr", "flush", "dev", AP_INTERFACE))
+    run(root_cmd("iw", "dev", AP_INTERFACE, "set", "type", "__ap"))
+    run(root_cmd("ip", "addr", "replace", f"{AP_IP}/24", "dev", AP_INTERFACE))
+    run(root_cmd("ip", "link", "set", AP_INTERFACE, "up"))
 
     log_path = "/tmp/medical-hwsim-hostapd.log"
     process = subprocess.Popen(
-        ["sudo", "hostapd", config],
+        root_cmd("hostapd", config),
         stdout=open(log_path, "w", encoding="utf-8", errors="replace"),
         stderr=subprocess.STDOUT,
         start_new_session=True,
@@ -263,17 +269,16 @@ auth_algs=1
 
 
 def start_dnsmasq():
-    run(["sudo", "ip", "addr", "replace", f"{AP_IP}/24", "dev", AP_INTERFACE])
+    run(root_cmd("ip", "addr", "replace", f"{AP_IP}/24", "dev", AP_INTERFACE))
     log_path = "/tmp/medical-hwsim-dnsmasq.log"
     process = subprocess.Popen(
-        [
-            "sudo",
+        root_cmd(
             "dnsmasq",
             f"--interface={AP_INTERFACE}",
             "--bind-interfaces",
             "--dhcp-range=192.168.70.10,192.168.70.50,12h",
             "--no-daemon",
-        ],
+        ),
         stdout=open(log_path, "w", encoding="utf-8", errors="replace"),
         stderr=subprocess.STDOUT,
         start_new_session=True,
@@ -283,7 +288,7 @@ def start_dnsmasq():
 
 
 def start_mqtt_broker():
-    run(["sudo", "pkill", "-f", str(MOSQUITTO_CONFIG)], check=False)
+    run(root_cmd("pkill", "-f", str(MOSQUITTO_CONFIG)), check=False)
     for path in (MOSQUITTO_CONFIG, MOSQUITTO_LOG, MOSQUITTO_PID):
         try:
             path.unlink()
@@ -326,12 +331,11 @@ def connect_gateway(ap_mode):
         encoding="utf-8",
     )
 
-    run(["sudo", "ip", "netns", "exec", GATEWAY_NAMESPACE, "ip", "link", "set", "lo", "up"])
-    run(["sudo", "ip", "netns", "exec", GATEWAY_NAMESPACE, "ip", "link", "set", GATEWAY_INTERFACE, "up"])
+    run(root_cmd("ip", "netns", "exec", GATEWAY_NAMESPACE, "ip", "link", "set", "lo", "up"))
+    run(root_cmd("ip", "netns", "exec", GATEWAY_NAMESPACE, "ip", "link", "set", GATEWAY_INTERFACE, "up"))
     log_path = f"/tmp/{GATEWAY_NAMESPACE}-wpa.log"
     process = subprocess.Popen(
-        [
-            "sudo",
+        root_cmd(
             "ip",
             "netns",
             "exec",
@@ -343,7 +347,7 @@ def connect_gateway(ap_mode):
             config,
             "-D",
             "nl80211",
-        ],
+        ),
         stdout=open(log_path, "w", encoding="utf-8", errors="replace"),
         stderr=subprocess.STDOUT,
         start_new_session=True,
@@ -351,8 +355,7 @@ def connect_gateway(ap_mode):
     time.sleep(5)
     ensure_process_running(process, "medical gateway wpa_supplicant", log_path)
     run(
-        [
-            "sudo",
+        root_cmd(
             "ip",
             "netns",
             "exec",
@@ -363,7 +366,7 @@ def connect_gateway(ap_mode):
             f"{GATEWAY_IP}/24",
             "dev",
             GATEWAY_INTERFACE,
-        ]
+        )
     )
 
 
@@ -384,12 +387,7 @@ def setup_medical_ap_gateway(ap_mode):
 def launch_gateway_in_namespace(process):
     log_file, actual_log_path = open_log_file(process["log"])
     cmd = [
-        "sudo",
-        "ip",
-        "netns",
-        "exec",
-        GATEWAY_NAMESPACE,
-        process["cmd"][0],
+        *root_cmd("ip", "netns", "exec", GATEWAY_NAMESPACE, process["cmd"][0]),
         "-u",
         *process["cmd"][1:],
     ]

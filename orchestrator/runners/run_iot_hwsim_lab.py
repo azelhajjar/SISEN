@@ -198,6 +198,12 @@ def run(cmd):
     subprocess.run(cmd, check=True)
 
 
+def root_cmd(*cmd):
+    if os.name == "posix" and hasattr(os, "geteuid") and os.geteuid() == 0:
+        return list(cmd)
+    return ["sudo", *cmd]
+
+
 def wait_for_enter(message):
     print()
     try:
@@ -268,8 +274,8 @@ def load_hwsim():
             print("Using existing mac80211_hwsim radios.")
             return
 
-    run(["sudo", "modprobe", "-r", "mac80211_hwsim"])
-    run(["sudo", "modprobe", "mac80211_hwsim", f"radios={len(DEVICES) + 1}"])
+    run(root_cmd("modprobe", "-r", "mac80211_hwsim"))
+    run(root_cmd("modprobe", "mac80211_hwsim", f"radios={len(DEVICES) + 1}"))
 
 
 def print_log_tail(log_path, line_count=20):
@@ -325,7 +331,7 @@ allow_anonymous true
 
 
 def create_namespace(name):
-    run(["sudo", "ip", "netns", "add", name])
+    run(root_cmd("ip", "netns", "add", name))
 
 
 def get_phy_for_interface(interface_name):
@@ -354,7 +360,7 @@ def get_phy_for_interface(interface_name):
 def move_wlan_to_namespace(wlan, namespace):
     phy = get_phy_for_interface(wlan)
     print(f"Moving {wlan} ({phy}) into namespace {namespace}")
-    run(["sudo", "iw", "phy", phy, "set", "netns", "name", namespace])
+    run(root_cmd("iw", "phy", phy, "set", "netns", "name", namespace))
 
 
 def start_hostapd(ap_mode):
@@ -370,15 +376,15 @@ auth_algs=1
 {hwsim_hostapd_mode_config(ap_mode, HWSIM_MACFILTER_AP_MODES, MACFILTER_ALLOWED_MACS)}
 """)
 
-    run(["sudo", "ip", "link", "set", AP_INTERFACE, "down"])
-    run(["sudo", "ip", "addr", "flush", "dev", AP_INTERFACE])
-    run(["sudo", "iw", "dev", AP_INTERFACE, "set", "type", "__ap"])
-    run(["sudo", "ip", "addr", "replace", f"{AP_IP}/24", "dev", AP_INTERFACE])
-    run(["sudo", "ip", "link", "set", AP_INTERFACE, "up"])
+    run(root_cmd("ip", "link", "set", AP_INTERFACE, "down"))
+    run(root_cmd("ip", "addr", "flush", "dev", AP_INTERFACE))
+    run(root_cmd("iw", "dev", AP_INTERFACE, "set", "type", "__ap"))
+    run(root_cmd("ip", "addr", "replace", f"{AP_IP}/24", "dev", AP_INTERFACE))
+    run(root_cmd("ip", "link", "set", AP_INTERFACE, "up"))
 
     log_path = "/tmp/hwsim-hostapd.log"
     process = subprocess.Popen(
-        ["sudo", "hostapd", config],
+        root_cmd("hostapd", config),
         stdout=open(log_path, "w"),
         stderr=subprocess.STDOUT,
         start_new_session=True,
@@ -389,18 +395,17 @@ auth_algs=1
 
 
 def start_dnsmasq():
-    run(["sudo", "ip", "addr", "replace", f"{AP_IP}/24", "dev", AP_INTERFACE])
+    run(root_cmd("ip", "addr", "replace", f"{AP_IP}/24", "dev", AP_INTERFACE))
 
     log_path = "/tmp/hwsim-dnsmasq.log"
     process = subprocess.Popen(
-        [
-            "sudo",
+        root_cmd(
             "dnsmasq",
             "--interface=wlan0",
             "--bind-interfaces",
             "--dhcp-range=192.168.60.10,192.168.60.100,12h",
             "--no-daemon",
-        ],
+        ),
         stdout=open(log_path, "w"),
         stderr=subprocess.STDOUT,
         start_new_session=True,
@@ -422,20 +427,19 @@ def connect_client(device, ap_mode):
             f"{hwsim_client_network_config(ap_mode, AP_SSID, HWSIM_MACFILTER_AP_MODES)}"
         )
 
-    run([
-        "sudo", "ip", "netns", "exec", namespace,
+    run(root_cmd(
+        "ip", "netns", "exec", namespace,
         "ip", "link", "set", "dev", wlan, "address", device["mac"],
-    ])
+    ))
 
-    run([
-        "sudo", "ip", "netns", "exec", namespace,
+    run(root_cmd(
+        "ip", "netns", "exec", namespace,
         "ip", "link", "set", wlan, "up",
-    ])
+    ))
 
     log_path = f"/tmp/{namespace}-wpa.log"
     process = subprocess.Popen(
-        [
-            "sudo",
+        root_cmd(
             "ip",
             "netns",
             "exec",
@@ -447,7 +451,7 @@ def connect_client(device, ap_mode):
             config,
             "-D",
             "nl80211",
-        ],
+        ),
         stdout=open(log_path, "w"),
         stderr=subprocess.STDOUT,
         start_new_session=True,
@@ -456,13 +460,13 @@ def connect_client(device, ap_mode):
     time.sleep(5)
     ensure_process_running(process, f"{namespace} wpa_supplicant", log_path)
 
-    run([
-        "sudo", "ip", "netns", "exec", namespace,
+    run(root_cmd(
+        "ip", "netns", "exec", namespace,
         "ip", "addr", "add",
         f"{device['ip']}/24",
         "dev",
         wlan,
-    ])
+    ))
 
 
 def launch_sensor(device, sensor):
@@ -471,8 +475,7 @@ def launch_sensor(device, sensor):
     log_file = open(log_path, "w")
 
     process = subprocess.Popen(
-        [
-            "sudo",
+        root_cmd(
             "ip",
             "netns",
             "exec",
@@ -487,7 +490,7 @@ def launch_sensor(device, sensor):
             str(PYTHON),
             "-u",
             str(PROJECT_ROOT / sensor["sensor"]),
-        ],
+        ),
         stdout=log_file,
         stderr=subprocess.STDOUT,
         start_new_session=True,

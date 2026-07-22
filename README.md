@@ -69,6 +69,7 @@ cd SISEN
 Run setup from the repository root:
 
 ```bash
+sudo ./setup/setup-dependencies.sh
 ./setup.sh
 ```
 
