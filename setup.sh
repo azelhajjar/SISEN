@@ -69,5 +69,4 @@ echo
 echo "SISEN setup complete."
 echo
 echo "Next:"
-echo "  source .venv/bin/activate"
 echo "  python3 launch_sisen.py"
