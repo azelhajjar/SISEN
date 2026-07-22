@@ -313,6 +313,7 @@ def cleanup_labs():
                 except subprocess.TimeoutExpired:
                     process.kill()
 
+        print("Stopping 6LoWPAN lab processes...")
         run_step("Stop 6LoWPAN Lab", [*SISEN_LAB, "stop"], quiet=True)
         run_step("Stop standalone AP", ["bash", "ap/teardown-ap.sh"], quiet=True)
         cleanup_medical_lab()
@@ -677,8 +678,8 @@ def main():
     print()
     print("Cleaning previous lab processes...")
 
-    cleanup_medical_lab()
     run_step("Stop 6LoWPAN Lab", [*SISEN_LAB, "stop"], quiet=True)
+    cleanup_medical_lab()
     cleanup_smart_building_lab()
 
     print()
@@ -751,5 +752,6 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         print()
-        print("Interrupted. SISEN launcher exiting.")
+        print("Interrupted. Stopping SISEN launcher-managed labs...")
+        cleanup_labs()
         sys.exit(130)

@@ -164,6 +164,10 @@ def delete_namespace_if_exists(namespace):
 
 
 def load_hwsim():
+    subprocess.run(["systemctl", "stop", "wpa_supplicant"], check=False)
+    subprocess.run(["pkill", "wpa_supplicant"], check=False)
+    subprocess.run(["pkill", "hostapd"], check=False)
+
     run(["sudo", "modprobe", "-r", "mac80211_hwsim"], check=False)
     run(["sudo", "modprobe", "mac80211_hwsim", "radios=2"])
 

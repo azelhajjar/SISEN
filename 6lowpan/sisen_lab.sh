@@ -311,7 +311,9 @@ stop_lab() {
   stop_pid sensor
   stop_pid gateway
   stop_pid mqtt
+  stop_pid dashboard-mqtt
   pkill -f /etc/mosquitto/6lowpan-poc.conf >/dev/null 2>&1 || true
+  pkill -f /etc/mosquitto/6lowpan-dashboard.conf >/dev/null 2>&1 || true
   if ip netns list | grep -Eq '(^| )border($| )' && command -v ip6tables >/dev/null 2>&1; then
     "$REPO_ROOT/attacks/drop_telemetry.sh" stop >/dev/null 2>&1 || true
   fi
@@ -319,6 +321,7 @@ stop_lab() {
   cleanup_wifi_hwsim
   cleanup_lowpan
   rm -f /etc/mosquitto/6lowpan-poc.conf
+  rm -f /etc/mosquitto/6lowpan-dashboard.conf
   rm -rf "$STATE_DIR"
   echo "SISEN 6LoWPAN lab stopped."
 }
@@ -438,10 +441,21 @@ start_dashboard_relays() {
     -p "$DASHBOARD_MQTT_PORT" \
     -t "sisen/6lowpan/relay-check" \
     -m "ready" >/dev/null 2>&1; then
-    echo
-    echo "NOTICE: no MQTT broker accepted localhost:$DASHBOARD_MQTT_PORT."
-    echo "Dashboard relay disabled. Start the normal SISEN Mosquitto service before launching the dashboard."
-    return
+    pkill -f /etc/mosquitto/6lowpan-dashboard.conf >/dev/null 2>&1 || true
+    rm -f /etc/mosquitto/6lowpan-dashboard.conf
+    cat >/etc/mosquitto/6lowpan-dashboard.conf <<EOF
+listener $DASHBOARD_MQTT_PORT 127.0.0.1
+allow_anonymous true
+EOF
+    echo "+ mosquitto -c /etc/mosquitto/6lowpan-dashboard.conf > $STATE_DIR/mosquitto-dashboard.log 2>&1 &"
+    mosquitto -c /etc/mosquitto/6lowpan-dashboard.conf >"$STATE_DIR/mosquitto-dashboard.log" 2>&1 &
+    save_pid dashboard-mqtt "$!"
+    sleep 1
+    if ! kill -0 "$(cat "$(pid_path dashboard-mqtt)")" >/dev/null 2>&1; then
+      echo "ERROR: dashboard Mosquitto failed to stay running. Output:" >&2
+      cat "$STATE_DIR/mosquitto-dashboard.log" >&2
+      exit 1
+    fi
   fi
 
   start_dashboard_relay "$TEMPERATURE_TOPIC" "temperature"
