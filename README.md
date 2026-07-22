@@ -20,62 +20,30 @@ Recommended environment:
 - Ubuntu 24.04 or later
 - Python 3.10 or later
 
-Minimum required system packages:
+## Installation
+
+Install Git, clone SISEN, install the system dependencies, set up the Python
+environment, and start the launcher:
 
 ```bash
 sudo apt update
-
-sudo apt install -y \
-    hostapd \
-    dnsmasq \
-    mosquitto \
-    mosquitto-clients \
-    iw \
-    iproute2 \
-    net-tools \
-    python3 \
-    python3-venv \
-    python3-pip \
-   netcat-openbsd
-```
-
-Package purpose:
-
-| Package | Purpose |
-| --- | --- |
-| `hostapd` | Wireless access point |
-| `dnsmasq` | DHCP / DNS support |
-| `mosquitto` | MQTT broker |
-| `mosquitto-clients` | MQTT diagnostics |
-| `iw` | Wireless utility |
-| `iproute2` | Namespaces / networking |
-| `net-tools` | Diagnostics |
-| `python3` | Runtime |
-| `python3-venv` | Virtual environments |
-| `python3-pip` | Python packages |
-| `netcat-openbsd` | Broker connectivity testing |
-
-## Clone The Repository
-
-Clone SISEN and enter the repository:
-
-```bash
+sudo apt install -y git
 git clone https://github.com/azelhajjar/SISEN.git
 cd SISEN
-```
-**Note:** All commands in this repository assume that you are running them from the repository root directory.
-## Setup
-
-Run setup from the repository root:
-
-```bash
 sudo ./setup/setup-dependencies.sh
 ./setup.sh
+python3 launch_sisen.py
 ```
 
-The setup script installs the required system packages with `apt-get`, creates
-the project Python environment under `.venv/`, and installs the Python package
-dependencies listed in `requirements.txt`:
+**Note:** All commands in this repository assume that you are running them from the repository root directory.
+
+`setup/setup-dependencies.sh` installs the operating-system, networking,
+wireless, capture and analysis dependencies. Wireshark is required for the
+practical activities.
+
+`setup.sh` creates the Python virtual environment and installs the Python
+packages listed in `requirements.txt`. Students do not need to activate `.venv`
+manually.
 
 ```text
 flask

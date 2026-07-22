@@ -86,6 +86,8 @@ apt_install_base() {
   apt-get install -y --no-install-recommends \
     hostapd \
     dnsmasq \
+    mosquitto \
+    mosquitto-clients \
     iproute2 \
     iptables \
     iw \
@@ -93,7 +95,11 @@ apt_install_base() {
     net-tools \
     tcpdump \
     wireshark \
+    python3 \
+    python3-venv \
     python3-pip \
+    dos2unix \
+    netcat-openbsd \
     ca-certificates \
     curl \
     git
@@ -184,6 +190,14 @@ setup_env() {
   fi
 }
 
+make_scripts_executable() {
+  print_section "Making Shell Scripts Executable"
+  SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+  REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+  find "$REPO_ROOT" -type f -name "*.sh" -exec chmod +x {} +
+  echo "[✓] Shell scripts are executable."
+}
+
 # ─────────────────────────────────────────
 # Wireless Interface Info
 # ─────────────────────────────────────────
@@ -214,6 +228,7 @@ main() {
   apt_install_extras
   service_sanity
   setup_env
+  make_scripts_executable
   show_interface_info
 
   print_section "Setup Complete"

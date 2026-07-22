@@ -13,38 +13,6 @@ if [ "$(id -u)" -eq 0 ] && [ -n "${SUDO_USER:-}" ]; then
     exit 1
 fi
 
-APT_RUNNER=""
-if [ "$(id -u)" -eq 0 ]; then
-    APT_RUNNER=""
-elif command -v sudo >/dev/null 2>&1; then
-    APT_RUNNER="sudo"
-else
-    echo "ERROR: sudo was not found. Install system packages manually first."
-    exit 1
-fi
-
-SYSTEM_PACKAGES="
-hostapd
-dnsmasq
-mosquitto
-mosquitto-clients
-iw
-iproute2
-net-tools
-python3
-python3-venv
-python3-pip
-dos2unix
-netcat-openbsd
-"
-
-echo "Installing SISEN system dependencies..."
-$APT_RUNNER apt-get update
-$APT_RUNNER apt-get install -y $SYSTEM_PACKAGES
-
-echo "Making shell scripts executable..."
-find . -type f -name "*.sh" -exec chmod +x {} +
-
 if [ ! -d ".venv" ]; then
     echo "Creating .venv..."
     python3 -m venv .venv
