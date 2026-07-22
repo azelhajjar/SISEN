@@ -101,8 +101,8 @@ apt_install_base() {
     dos2unix \
     netcat-openbsd \
     ca-certificates \
-    curl \
-    git
+    iwpan\
+    curl 
   echo "[✓] Base packages installed."
 }
 
