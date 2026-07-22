@@ -73,6 +73,7 @@ MEDICAL_PROCESS_PATTERNS = (
     "ble_wifi_gateway.py",
     "medical-hwsim-hostapd.conf",
     "medical-gateway.conf",
+    "medical-mosquitto.conf",
     "192.168.70.10,192.168.70.50",
 )
 MEDICAL_GATEWAY_NAMESPACE = "medical-gateway"
@@ -297,6 +298,18 @@ def cleanup_medical_lab():
             AP_MODE_STATE.unlink()
     except OSError:
         pass
+
+    for temp_file in (
+        Path("/etc/mosquitto/medical-mosquitto.conf"),
+        Path("/tmp/medical-mosquitto.log"),
+        Path("/tmp/medical-mosquitto.pid"),
+    ):
+        try:
+            temp_file.unlink()
+        except FileNotFoundError:
+            pass
+        except OSError:
+            pass
 
 
 def cleanup_labs():

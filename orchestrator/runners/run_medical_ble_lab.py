@@ -3,6 +3,7 @@
 #!/usr/bin/env python3
 import argparse
 import os
+import socket
 import subprocess
 import sys
 import time
@@ -39,6 +40,10 @@ AP_SSID = "SISEN-MEDICAL-IOT"
 AP_IP = "192.168.70.1"
 GATEWAY_IP = "192.168.70.10"
 AP_MODE_STATE = Path("/tmp/sisen-ap-mode")
+MQTT_PORT = 1883
+MOSQUITTO_CONFIG = Path("/etc/mosquitto/medical-mosquitto.conf")
+MOSQUITTO_LOG = Path("/tmp/medical-mosquitto.log")
+MOSQUITTO_PID = Path("/tmp/medical-mosquitto.pid")
 DEFAULT_PATIENT_COUNT = 1
 MAX_PATIENT_COUNT = 10
 
@@ -104,6 +109,7 @@ def launch_process(process):
             stdout=log_file,
             stderr=subprocess.STDOUT,
             cwd=str(PROJECT_ROOT),
+            start_new_session=True,
         )
     except OSError as exc:
         log_file.close()
@@ -148,6 +154,22 @@ def ensure_process_running(process, name, log_path):
     sys.exit(1)
 
 
+def wait_for_tcp(host, port, timeout=10):
+    deadline = time.time() + timeout
+    last_error = None
+    while time.time() < deadline:
+        try:
+            with socket.create_connection((host, port), timeout=1):
+                return
+        except OSError as exc:
+            last_error = exc
+            time.sleep(0.25)
+
+    print(f"ERROR: MQTT broker did not become ready at {host}:{port}: {last_error}")
+    print_log_tail(MOSQUITTO_LOG)
+    sys.exit(1)
+
+
 def namespace_exists(namespace):
     result = subprocess.run(
         ["sudo", "ip", "netns", "list"],
@@ -176,6 +198,7 @@ def cleanup_stale_medical_gateway():
     for pattern in (
         "medical-hwsim-hostapd.conf",
         "medical-gateway.conf",
+        "medical-mosquitto.conf",
         "192.168.70.10,192.168.70.50",
     ):
         run(["sudo", "pkill", "-f", pattern], check=False)
@@ -233,6 +256,7 @@ auth_algs=1
         ["sudo", "hostapd", config],
         stdout=open(log_path, "w", encoding="utf-8", errors="replace"),
         stderr=subprocess.STDOUT,
+        start_new_session=True,
     )
     time.sleep(2)
     ensure_process_running(process, "medical hostapd", log_path)
@@ -252,9 +276,43 @@ def start_dnsmasq():
         ],
         stdout=open(log_path, "w", encoding="utf-8", errors="replace"),
         stderr=subprocess.STDOUT,
+        start_new_session=True,
     )
     time.sleep(1)
     ensure_process_running(process, "medical dnsmasq", log_path)
+
+
+def start_mqtt_broker():
+    run(["sudo", "pkill", "-f", str(MOSQUITTO_CONFIG)], check=False)
+    for path in (MOSQUITTO_CONFIG, MOSQUITTO_LOG, MOSQUITTO_PID):
+        try:
+            path.unlink()
+        except FileNotFoundError:
+            pass
+        except OSError:
+            pass
+
+    MOSQUITTO_CONFIG.write_text(
+        f"""listener {MQTT_PORT} 0.0.0.0
+allow_anonymous true
+""",
+        encoding="utf-8",
+    )
+
+    log_file = MOSQUITTO_LOG.open("w", encoding="utf-8", errors="replace")
+    process = subprocess.Popen(
+        ["mosquitto", "-c", str(MOSQUITTO_CONFIG)],
+        stdout=log_file,
+        stderr=subprocess.STDOUT,
+        start_new_session=True,
+    )
+    MOSQUITTO_PID.write_text(str(process.pid), encoding="utf-8")
+    time.sleep(1)
+    ensure_process_running(process, "medical MQTT broker", str(MOSQUITTO_LOG))
+    wait_for_tcp("127.0.0.1", MQTT_PORT)
+
+    print("Medical MQTT broker started")
+    print(f"  Log: {MOSQUITTO_LOG}")
 
 
 def gateway_network_config(ap_mode):
@@ -288,6 +346,7 @@ def connect_gateway(ap_mode):
         ],
         stdout=open(log_path, "w", encoding="utf-8", errors="replace"),
         stderr=subprocess.STDOUT,
+        start_new_session=True,
     )
     time.sleep(5)
     ensure_process_running(process, "medical gateway wpa_supplicant", log_path)
@@ -316,6 +375,7 @@ def setup_medical_ap_gateway(ap_mode):
     start_hostapd(ap_mode)
     time.sleep(3)
     start_dnsmasq()
+    start_mqtt_broker()
     create_gateway_namespace()
     move_gateway_wlan_to_namespace()
     connect_gateway(ap_mode)
@@ -340,6 +400,7 @@ def launch_gateway_in_namespace(process):
             stdout=log_file,
             stderr=subprocess.STDOUT,
             cwd=str(PROJECT_ROOT),
+            start_new_session=True,
         )
     except OSError as exc:
         log_file.close()
