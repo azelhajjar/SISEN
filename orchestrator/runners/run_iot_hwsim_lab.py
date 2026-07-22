@@ -40,6 +40,10 @@ PYTHON = choose_python()
 AP_INTERFACE = "wlan0"
 AP_SSID = "SISEN-SMART-BUILDING"
 AP_IP = "192.168.60.1"
+MQTT_PORT = 1883
+MOSQUITTO_CONFIG = Path("/tmp/hwsim-mosquitto.conf")
+MOSQUITTO_LOG = Path("/tmp/hwsim-mosquitto.log")
+MOSQUITTO_PID = Path("/tmp/hwsim-mosquitto.pid")
 AP_MODE_STATE = Path("/tmp/sisen-ap-mode")
 MACFILTER_ALLOWED_MACS = Path("/tmp/sisen-smart-building-allowed-macs.txt")
 DEFAULT_SENSOR_COUNT = 4
@@ -286,6 +290,34 @@ def ensure_process_running(process, name, log_path):
     sys.exit(1)
 
 
+def start_mqtt_broker():
+    for path in (MOSQUITTO_CONFIG, MOSQUITTO_LOG, MOSQUITTO_PID):
+        try:
+            path.unlink()
+        except FileNotFoundError:
+            pass
+
+    MOSQUITTO_CONFIG.write_text(
+        f"""listener {MQTT_PORT} 0.0.0.0
+allow_anonymous true
+""",
+        encoding="utf-8",
+    )
+
+    log_file = open(MOSQUITTO_LOG, "w", encoding="utf-8", errors="replace")
+    process = subprocess.Popen(
+        ["mosquitto", "-c", str(MOSQUITTO_CONFIG)],
+        stdout=log_file,
+        stderr=subprocess.STDOUT,
+        start_new_session=True,
+    )
+    MOSQUITTO_PID.write_text(str(process.pid), encoding="utf-8")
+    time.sleep(1)
+    ensure_process_running(process, "mosquitto", str(MOSQUITTO_LOG))
+    print("MQTT broker started")
+    print(f"  Log: {MOSQUITTO_LOG}")
+
+
 def create_namespace(name):
     run(["sudo", "ip", "netns", "add", name])
 
@@ -343,6 +375,7 @@ auth_algs=1
         ["sudo", "hostapd", config],
         stdout=open(log_path, "w"),
         stderr=subprocess.STDOUT,
+        start_new_session=True,
     )
 
     time.sleep(2)
@@ -364,6 +397,7 @@ def start_dnsmasq():
         ],
         stdout=open(log_path, "w"),
         stderr=subprocess.STDOUT,
+        start_new_session=True,
     )
     time.sleep(1)
     ensure_process_running(process, "dnsmasq", log_path)
@@ -410,6 +444,7 @@ def connect_client(device, ap_mode):
         ],
         stdout=open(log_path, "w"),
         stderr=subprocess.STDOUT,
+        start_new_session=True,
     )
 
     time.sleep(5)
@@ -449,6 +484,7 @@ def launch_sensor(device, sensor):
         ],
         stdout=log_file,
         stderr=subprocess.STDOUT,
+        start_new_session=True,
     )
 
     time.sleep(1)
@@ -515,6 +551,7 @@ def main():
     start_hostapd(args.ap_mode)
     time.sleep(3)
     start_dnsmasq()
+    start_mqtt_broker()
 
     for device in DEVICES:
         create_namespace(device["namespace"])
