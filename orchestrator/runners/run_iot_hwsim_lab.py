@@ -422,8 +422,6 @@ auth_algs=1
 
 
 def start_dnsmasq():
-    run(root_cmd("ip", "addr", "replace", f"{AP_IP}/24", "dev", AP_INTERFACE))
-
     log_path = "/tmp/hwsim-dnsmasq.log"
     process = subprocess.Popen(
         root_cmd(
