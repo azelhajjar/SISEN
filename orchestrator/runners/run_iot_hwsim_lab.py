@@ -300,6 +300,33 @@ def ensure_process_running(process, name, log_path):
     sys.exit(1)
 
 
+def wait_for_association(namespace, wlan, ssid, process, log_path, timeout=20):
+    deadline = time.time() + timeout
+    last_link_output = ""
+
+    while time.time() < deadline:
+        ensure_process_running(process, f"{namespace} wpa_supplicant", log_path)
+
+        result = subprocess.run(
+            root_cmd("ip", "netns", "exec", namespace, "iw", "dev", wlan, "link"),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        last_link_output = (result.stdout + result.stderr).strip()
+
+        if f"SSID: {ssid}" in last_link_output:
+            return
+
+        time.sleep(1)
+
+    print(f"ERROR: {namespace} did not associate with {ssid}.")
+    print("Last iw link output:")
+    print(last_link_output or "No iw link output.")
+    print_log_tail(log_path, line_count=10)
+    sys.exit(1)
+
+
 def start_mqtt_broker():
     subprocess.run(["pkill", "-f", "hwsim-mosquitto.conf"], check=False)
 
@@ -459,6 +486,7 @@ def connect_client(device, ap_mode):
 
     time.sleep(5)
     ensure_process_running(process, f"{namespace} wpa_supplicant", log_path)
+    wait_for_association(namespace, wlan, AP_SSID, process, log_path)
 
     run(root_cmd(
         "ip", "netns", "exec", namespace,
