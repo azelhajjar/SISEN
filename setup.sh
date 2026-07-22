@@ -13,6 +13,14 @@ if [ "$(id -u)" -eq 0 ] && [ -n "${SUDO_USER:-}" ]; then
     exit 1
 fi
 
+if [ ! -f ".env" ]; then
+    if [ -f ".env.example" ]; then
+        cp .env.example .env
+    else
+        echo "WARNING: .env.example was not found; skipping .env creation."
+    fi
+fi
+
 if [ ! -d ".venv" ]; then
     echo "Creating .venv..."
     python3 -m venv .venv

@@ -154,29 +154,6 @@ service_sanity() {
   echo "[✓] hostapd and dnsmasq disabled from auto-start."
 }
 
-# ─────────────────────────────────────────
-# Environment Setup
-# ─────────────────────────────────────────
-
-setup_env() {
-  print_section "Setting Up Configuration"
-  SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-  REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-  ENV_FILE="$REPO_ROOT/.env"
-
-  if [ ! -f "$ENV_FILE" ]; then
-    if [ -f "$REPO_ROOT/.env.example" ]; then
-      echo "[i] No .env found. Copying from .env.example..."
-      cp "$REPO_ROOT/.env.example" "$ENV_FILE"
-      echo "[✓] .env created at $ENV_FILE"
-    else
-      echo "[i] No .env.example found. Skipping .env creation."
-    fi
-  else
-    echo "[i] .env already exists at $ENV_FILE — not overwriting."
-  fi
-}
-
 make_scripts_executable() {
   print_section "Making Shell Scripts Executable"
   SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -197,7 +174,6 @@ main() {
   apt_install_wireless_tools
   apt_install_python_tools
   service_sanity
-  setup_env
   make_scripts_executable
 
   print_section "Setup Complete"
