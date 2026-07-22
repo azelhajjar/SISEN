@@ -140,18 +140,6 @@ apt_install_python_tools() {
   echo "[✓] Python tools installed."
 }
 
-apt_install_extras() {
-  print_section "Installing Extra Tools"
-  apt-get install -y \
-    libpkgconf3 \
-    libssl-dev \
-    libsysfs2 \
-    openssl \
-    pkgconf \
-    avahi-daemon || true
-  echo "[✓] Extra tools installed."
-}
-
 # ─────────────────────────────────────────
 # Service Configuration
 # ─────────────────────────────────────────
@@ -225,7 +213,6 @@ main() {
   apt_install_base
   apt_install_wireless_tools
   apt_install_python_tools
-  apt_install_extras
   service_sanity
   setup_env
   make_scripts_executable
@@ -240,10 +227,7 @@ main() {
   echo "     - Set SSID_PREFIX to your lab or course name"
   echo "     - Set WPA_PASSPHRASE, WEP_KEY, RADIUS_SECRET"
   echo ""
-  echo "  2. Make all scripts executable:"
-  echo "     find . -name '*.sh' -exec chmod +x {} \;"
-  echo ""
-  echo "  3. Run an AP:"
+  echo "  2. Run an AP:"
   echo "     sudo bash ap/open-ap.sh"
   echo "     sudo bash ap/wpa2-ap.sh"
   echo ""
