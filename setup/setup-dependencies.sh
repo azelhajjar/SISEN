@@ -146,12 +146,14 @@ apt_install_python_tools() {
 
 service_sanity() {
   print_section "Disabling Auto-Start Services"
-  # hostapd and dnsmasq are managed by AP scripts, not systemd
+  # hostapd, dnsmasq and mosquitto are managed by SISEN lab scripts, not systemd
   systemctl disable hostapd 2>/dev/null || true
   systemctl disable dnsmasq 2>/dev/null || true
+  systemctl disable mosquitto 2>/dev/null || true
   systemctl stop hostapd 2>/dev/null || true
   systemctl stop dnsmasq 2>/dev/null || true
-  echo "[✓] hostapd and dnsmasq disabled from auto-start."
+  systemctl stop mosquitto 2>/dev/null || true
+  echo "[✓] hostapd, dnsmasq and mosquitto disabled from auto-start."
 }
 
 make_scripts_executable() {
