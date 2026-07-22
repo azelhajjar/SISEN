@@ -169,7 +169,6 @@ setup_env() {
       echo "[i] No .env found. Copying from .env.example..."
       cp "$REPO_ROOT/.env.example" "$ENV_FILE"
       echo "[✓] .env created at $ENV_FILE"
-      echo "[i] Edit .env to set your interface name, SSID prefix, and passwords."
     else
       echo "[i] No .env.example found. Skipping .env creation."
     fi
@@ -187,22 +186,6 @@ make_scripts_executable() {
 }
 
 # ─────────────────────────────────────────
-# Wireless Interface Info
-# ─────────────────────────────────────────
-
-show_interface_info() {
-  print_section "Wireless Interface"
-  if iw dev 2>/dev/null | grep -q Interface; then
-    IFACE=$(iw dev | awk '/Interface/{print $2}' | head -n1)
-    echo "[✓] Wireless interface detected: $IFACE"
-    echo "[i] Set INTERFACE=$IFACE in your .env file."
-  else
-    echo "[!] No wireless interface detected."
-    echo "    Connect a wireless adaptor and recheck with: iw dev"
-  fi
-}
-
-# ─────────────────────────────────────────
 # Main
 # ─────────────────────────────────────────
 
@@ -216,7 +199,6 @@ main() {
   service_sanity
   setup_env
   make_scripts_executable
-  show_interface_info
 
   print_section "Setup Complete"
   echo ""
