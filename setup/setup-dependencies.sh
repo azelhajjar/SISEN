@@ -220,19 +220,8 @@ main() {
 
   print_section "Setup Complete"
   echo ""
-  echo "  Next steps:"
-  echo ""
-  echo "  1. Edit .env to configure your environment:"
-  echo "     - Set INTERFACE to your wireless adaptor name"
-  echo "     - Set SSID_PREFIX to your lab or course name"
-  echo "     - Set WPA_PASSPHRASE, WEP_KEY, RADIUS_SECRET"
-  echo ""
-  echo "  2. Run an AP:"
-  echo "     sudo bash ap/open-ap.sh"
-  echo "     sudo bash ap/wpa2-ap.sh"
-  echo ""
-  echo "[i] If you see a 'Relogin or restart required' message,"
-  echo "    please log out or reboot before continuing."
+  echo "  Next:"
+  echo "    ./setup.sh"
 }
 
 main "$@"

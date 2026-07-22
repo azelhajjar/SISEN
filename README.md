@@ -51,6 +51,22 @@ paho-mqtt
 pyyaml
 ```
 
+## Environment Configuration
+
+During system setup, SISEN creates `.env` from `.env.example` if `.env` does not already exist.
+
+The default configuration is suitable for the simulated scenarios, so students normally do not need to edit `.env` before launching SISEN.
+
+Use `.env.example` as the reference for the available settings and expected values. Edit `.env` only when using a physical wireless adaptor or changing access point settings.
+
+To identify an available wireless interface, run:
+
+```bash
+iw dev
+```
+
+Do not commit passwords, keys or other local `.env` values to the repository.
+
 ## Launch
 
 Start the interactive menu:
