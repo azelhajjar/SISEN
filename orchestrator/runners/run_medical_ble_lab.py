@@ -17,6 +17,7 @@ from orchestrator.wireless import (
     hwsim_ap_mode_state,
     hwsim_client_network_config,
     hwsim_hostapd_mode_config,
+    mark_hwsim_interfaces_unmanaged,
 )
 
 
@@ -198,6 +199,7 @@ def load_hwsim():
 
     run(root_cmd("modprobe", "-r", "mac80211_hwsim"), check=False)
     run(root_cmd("modprobe", "mac80211_hwsim", "radios=2"))
+    mark_hwsim_interfaces_unmanaged([AP_INTERFACE, GATEWAY_INTERFACE])
 
 
 def cleanup_stale_medical_gateway():

@@ -1,5 +1,7 @@
 import subprocess
+import shutil
 import sys
+import time
 from pathlib import Path
 
 
@@ -105,6 +107,109 @@ def hwsim_client_network_config(ap_mode, ssid, supported_modes=HWSIM_AP_MODES):
 def hwsim_ap_mode_state(prefix, ap_mode):
     validate_hwsim_ap_mode(ap_mode, HWSIM_MACFILTER_AP_MODES)
     return f"{prefix}-{ap_mode}\n"
+
+
+def interface_driver(interface):
+    driver_path = Path("/sys/class/net") / interface / "device" / "driver"
+    if not driver_path.exists():
+        return ""
+
+    try:
+        return driver_path.resolve(strict=True).name
+    except OSError:
+        return ""
+
+
+def wait_for_hwsim_interfaces(required_interfaces, timeout=10):
+    deadline = time.time() + timeout
+
+    while time.time() < deadline:
+        missing_or_wrong_driver = [
+            interface
+            for interface in required_interfaces
+            if interface_driver(interface) != "mac80211_hwsim"
+        ]
+        if not missing_or_wrong_driver:
+            return
+        time.sleep(0.5)
+
+    print("ERROR: required HWSIM interfaces were not created with mac80211_hwsim.")
+    for interface in required_interfaces:
+        driver = interface_driver(interface) or "missing"
+        print(f"  {interface}: {driver}")
+    sys.exit(1)
+
+
+def networkmanager_is_active():
+    result = subprocess.run(
+        ["systemctl", "is-active", "--quiet", "NetworkManager"],
+        check=False,
+    )
+    return result.returncode == 0
+
+
+def networkmanager_device_state(interface):
+    result = subprocess.run(
+        ["nmcli", "-t", "-f", "DEVICE,STATE", "device", "status"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    for line in result.stdout.splitlines():
+        device, _, state = line.partition(":")
+        if device == interface:
+            return state
+
+    return "not-listed"
+
+
+def mark_hwsim_interfaces_unmanaged(required_interfaces, timeout=10):
+    wait_for_hwsim_interfaces(required_interfaces, timeout=timeout)
+
+    if shutil.which("nmcli") is None:
+        if networkmanager_is_active():
+            print("ERROR: NetworkManager is active but nmcli is not available.")
+            sys.exit(1)
+        print("NetworkManager is not active; skipping HWSIM unmanaged check.")
+        return
+
+    for interface in required_interfaces:
+        try:
+            subprocess.run(
+                ["nmcli", "device", "set", interface, "managed", "no"],
+                check=True,
+            )
+        except subprocess.CalledProcessError:
+            print(f"ERROR: failed to mark HWSIM interface unmanaged: {interface}")
+            sys.exit(1)
+
+    deadline = time.time() + timeout
+    states = {}
+
+    while time.time() < deadline:
+        try:
+            states = {
+                interface: networkmanager_device_state(interface)
+                for interface in required_interfaces
+            }
+        except subprocess.CalledProcessError:
+            print("ERROR: failed to query NetworkManager device state with nmcli.")
+            sys.exit(1)
+
+        if all(state == "unmanaged" for state in states.values()):
+            print(
+                "Marked HWSIM interfaces unmanaged by NetworkManager: "
+                + ", ".join(required_interfaces)
+            )
+            return
+
+        time.sleep(0.5)
+
+    print("ERROR: NetworkManager still manages required HWSIM interfaces.")
+    for interface, state in states.items():
+        print(f"  {interface}: {state}")
+    sys.exit(1)
 
 
 def choose_ap_mode(current_mode):

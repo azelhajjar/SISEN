@@ -20,6 +20,7 @@ from orchestrator.wireless import (
     hwsim_ap_mode_state,
     hwsim_client_network_config,
     hwsim_hostapd_mode_config,
+    mark_hwsim_interfaces_unmanaged,
 )
 
 
@@ -259,6 +260,7 @@ def load_hwsim():
     subprocess.run(["systemctl", "stop", "wpa_supplicant"], check=False)
     subprocess.run(["pkill", "wpa_supplicant"], check=False)
     subprocess.run(["pkill", "hostapd"], check=False)
+    required_interfaces = [AP_INTERFACE] + [device["wlan"] for device in DEVICES]
 
     existing_interfaces = subprocess.run(
         ["iw", "dev"],
@@ -269,13 +271,14 @@ def load_hwsim():
 
     if existing_interfaces.returncode == 0:
         existing = existing_interfaces.stdout
-        required_interfaces = [AP_INTERFACE] + [device["wlan"] for device in DEVICES]
         if all(f"Interface {interface}" in existing for interface in required_interfaces):
             print("Using existing mac80211_hwsim radios.")
+            mark_hwsim_interfaces_unmanaged(required_interfaces)
             return
 
     run(root_cmd("modprobe", "-r", "mac80211_hwsim"))
     run(root_cmd("modprobe", "mac80211_hwsim", f"radios={len(DEVICES) + 1}"))
+    mark_hwsim_interfaces_unmanaged(required_interfaces)
 
 
 def print_log_tail(log_path, line_count=20):
