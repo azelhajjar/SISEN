@@ -311,12 +311,14 @@ stop_lab() {
   stop_pid sensor
   stop_pid gateway
   stop_pid mqtt
+  pkill -f /etc/mosquitto/6lowpan-poc.conf >/dev/null 2>&1 || true
   if ip netns list | grep -Eq '(^| )border($| )' && command -v ip6tables >/dev/null 2>&1; then
     "$REPO_ROOT/attacks/drop_telemetry.sh" stop >/dev/null 2>&1 || true
   fi
   stop_ap
   cleanup_wifi_hwsim
   cleanup_lowpan
+  rm -f /etc/mosquitto/6lowpan-poc.conf
   rm -rf "$STATE_DIR"
   echo "SISEN 6LoWPAN lab stopped."
 }
@@ -394,6 +396,9 @@ setup_lowpan_topology() {
 }
 
 start_mqtt() {
+  pkill -f /etc/mosquitto/6lowpan-poc.conf >/dev/null 2>&1 || true
+  rm -f /etc/mosquitto/6lowpan-poc.conf
+
   cat >/etc/mosquitto/6lowpan-poc.conf <<EOF
 listener $MQTT_PORT $MQTT_HOST_ADDR
 allow_anonymous true

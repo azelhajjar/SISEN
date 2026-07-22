@@ -235,6 +235,7 @@ def cleanup_smart_building_lab():
         cleanup_command(["pkill", process_name])
     for pattern in SMART_BUILDING_PROCESS_PATTERNS:
         cleanup_command(["pkill", "-f", pattern])
+    cleanup_command(["pkill", "-f", "hwsim-mosquitto.conf"])
 
     for namespace in smart_building_namespaces():
         if namespace_exists(namespace):
@@ -247,6 +248,9 @@ def cleanup_smart_building_lab():
         Path("/tmp/hwsim-hostapd.log"),
         Path("/tmp/hwsim-dnsmasq.conf"),
         Path("/tmp/hwsim-dnsmasq.log"),
+        Path("/etc/mosquitto/hwsim-mosquitto.conf"),
+        Path("/tmp/hwsim-mosquitto.log"),
+        Path("/tmp/hwsim-mosquitto.pid"),
         Path("/tmp/hwsim-dashboard.log"),
         AP_MODE_STATE,
     ]

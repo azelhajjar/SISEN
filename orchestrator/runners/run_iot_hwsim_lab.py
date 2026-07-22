@@ -291,6 +291,8 @@ def ensure_process_running(process, name, log_path):
 
 
 def start_mqtt_broker():
+    subprocess.run(["pkill", "-f", "hwsim-mosquitto.conf"], check=False)
+
     for path in (MOSQUITTO_CONFIG, MOSQUITTO_LOG, MOSQUITTO_PID):
         try:
             path.unlink()
