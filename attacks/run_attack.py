@@ -14,6 +14,41 @@ from pathlib import Path
 
 
 ATTACK_ROOT = Path(__file__).resolve().parent
+REPO_ROOT = ATTACK_ROOT.parent
+REEXEC_ENV = "SISEN_ATTACK_RUNNER_REEXEC"
+
+
+def _project_python():
+    return REPO_ROOT / ".venv" / "bin" / "python"
+
+
+def _running_project_python(project_python):
+    current = Path(sys.executable or "").absolute()
+    venv_bin = project_python.parent.absolute()
+    return current == project_python.absolute() or current.parent == venv_bin
+
+
+def _reexec_with_project_python():
+    project_python = _project_python()
+    if not project_python.exists():
+        return
+
+    if not os.access(project_python, os.X_OK):
+        raise SystemExit(
+            f"ERROR: project Python exists but is not executable: {project_python}\n"
+            "Run setup.sh again or fix the virtual environment permissions."
+        )
+
+    if os.environ.get(REEXEC_ENV) == "1" or _running_project_python(project_python):
+        return
+
+    env = os.environ.copy()
+    env[REEXEC_ENV] = "1"
+    os.execve(str(project_python), [str(project_python), str(Path(__file__).resolve()), *sys.argv[1:]], env)
+
+
+_reexec_with_project_python()
+
 PYTHON = sys.executable or "python3"
 GREEN = "\033[32m"
 RESET = "\033[0m"

@@ -3,7 +3,19 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 POC_DIR="$REPO_ROOT/6lowpan"
-PYTHON="${SISEN_PYTHON:-python3}"
+PROJECT_PYTHON="$REPO_ROOT/.venv/bin/python"
+if [ -n "${SISEN_PYTHON:-}" ]; then
+  PYTHON="$SISEN_PYTHON"
+elif [ -e "$PROJECT_PYTHON" ]; then
+  if [ ! -x "$PROJECT_PYTHON" ]; then
+    echo "ERROR: project Python exists but is not executable: $PROJECT_PYTHON" >&2
+    echo "Run setup.sh again or fix the virtual environment permissions." >&2
+    exit 1
+  fi
+  PYTHON="$PROJECT_PYTHON"
+else
+  PYTHON="python3"
+fi
 
 AP_MODE=""
 KEEP_AP=0
