@@ -12,17 +12,61 @@ Capture commands are intended for the controlled SISEN lab environment only. Do 
 
 ## Before Capturing
 
-Inspect active namespace interfaces:
+Start the required SISEN scenario before looking for capture interfaces. The available namespaces and interfaces depend on the active scenario.
+
+List all active network namespaces:
+
+```bash
+sudo ip netns list
+```
+
+Show all interfaces and addresses inside every active namespace:
 
 ```bash
 sudo ip -all netns exec ip -brief addr
 ```
 
-Inspect host interfaces:
+Show interfaces in one specific namespace:
+
+```bash
+sudo ip netns exec <namespace> ip -brief addr
+```
+
+For example:
+
+```bash
+sudo ip netns exec room-101 ip -brief addr
+sudo ip netns exec medical-gateway ip -brief addr
+sudo ip netns exec node1 ip -brief addr
+```
+
+Show host interfaces:
 
 ```bash
 ip -brief addr
 ```
+
+Show host interfaces with their operational state and additional details:
+
+```bash
+ip link show
+```
+
+For wireless interfaces, also inspect the wireless interface type and current mode:
+
+```bash
+iw dev
+```
+
+Typical capture points include:
+
+- host interfaces such as `wlan0`, loopback, bridge, or virtual Ethernet interfaces;
+- interfaces inside scenario namespaces, such as `wlan1`, `lowpan0`, `wpan1`, or namespace-specific forwarding interfaces;
+- the `any` interface when the exact host-side path is not yet known;
+- MQTT traffic on TCP port `1883`;
+- the 6LoWPAN relay broker on TCP port `1884`.
+
+Select the interface that corresponds to the communication path being investigated. Capturing on `any` is useful for broad observation, but an interface-specific capture usually provides clearer evidence about where traffic entered or left the system.
 
 The dashboard Capture Guidance panel also shows scenario-specific capture commands.
 
@@ -154,16 +198,69 @@ mosquitto_sub -h localhost -v -t '#'
 
 Open the `.pcap` files from the `captures/` folder in Wireshark.
 
-Useful filters include:
+The purpose is not to analyse every protocol field. Focus on evidence that explains normal scenario behaviour or the effect of a controlled attack.
+
+Useful general filters include:
 
 ```text
 mqtt
 tcp.port == 1883
+tcp.port == 1884
 udp
 ipv6
+icmpv6
 ```
 
-For 6LoWPAN, captures on `lowpan0` may show IPv6/UDP after Linux 6LoWPAN processing. Captures on `wpan` interfaces are closer to the low-power side, but decoding depends on kernel, libpcap, and Wireshark support in the VM.
+For MQTT traffic, inspect:
+
+- the source and destination addresses;
+- the MQTT `PUBLISH` message;
+- the topic name;
+- the message payload;
+- the order and frequency of messages;
+- repeated, stale, malformed, missing, or unexpected values.
+
+Useful topic filters include:
+
+```text
+mqtt.topic contains "building"
+mqtt.topic contains "patient"
+mqtt.topic contains "industrial/6lowpan"
+```
+
+For Wi-Fi captures, useful filters include:
+
+```text
+wlan
+wlan_mgt
+eapol
+```
+
+Inspect the SSID, BSSID, channel, client addresses, authentication and association frames, normal data frames, and any unusual management traffic.
+
+For IPv6, UDP, and 6LoWPAN-side captures, inspect:
+
+- source and destination addresses;
+- UDP ports;
+- node or sensor identifiers in the payload;
+- timestamps;
+- telemetry fields and values;
+- repeated or inconsistent payloads.
+
+For 6LoWPAN, captures on `lowpan0` may show IPv6 and UDP after Linux 6LoWPAN processing. Captures on `wpan` interfaces are closer to the IEEE 802.15.4 side, but decoding depends on kernel, libpcap, and Wireshark support in the VM.
+
+When comparing normal behaviour with an attack, look for changes in:
+
+- the sender or claimed node identity;
+- the destination or MQTT topic;
+- payload values;
+- message structure;
+- timestamps;
+- transmission frequency;
+- repeated identical messages;
+- the relationship between the captured traffic and the dashboard state.
+
+The capture should support a simple explanation of what changed, where it changed, and how that change affected the monitored system.
 
 ## Evidence To Save
 
