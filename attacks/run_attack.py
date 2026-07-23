@@ -127,6 +127,7 @@ for attack, description in (
     ("missing", "6LoWPAN protocol-path missing-telemetry activity."),
     ("extreme", "6LoWPAN protocol-path delivery of an extreme telemetry value."),
     ("replay", "6LoWPAN protocol-path replay of stale telemetry."),
+    ("malformed", "6LoWPAN protocol-path delivery of unexpected scalar values."),
 ):
     CATALOG.append(
         {
@@ -155,6 +156,17 @@ for scenario in ("building", "medical"):
                 "engine": "mqtt",
             }
         )
+
+for scenario in ("building", "medical"):
+    CATALOG.append(
+        {
+            "category": "protocol",
+            "scenario": scenario,
+            "attack": "malformed",
+            "description": f"Publish malformed or unexpected telemetry payloads for {scenario}.",
+            "engine": "mqtt",
+        }
+    )
 
 WIFI_MANUAL_ACTIVITIES = [
     {

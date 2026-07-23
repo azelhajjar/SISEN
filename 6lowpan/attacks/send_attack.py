@@ -13,10 +13,13 @@ def utc_now():
 def spoof_payloads():
     return [
         {
-            "sensor_id": "temp-rogue",
-            "node_id": "node-01",
-            "temperature": 19.9,
-            "unit": "C",
+            "sensor_id": "GAS-BAY-ROGUE",
+            "node_id": "node-04",
+            "label": "Loading Bay",
+            "gas_leak": "Gas detected",
+            "occupancy": "Occupied",
+            "air_quality": 760.0,
+            "unit": "mixed",
             "timestamp": utc_now(),
             "attack": "spoof",
         }
@@ -26,10 +29,14 @@ def spoof_payloads():
 def replay_payloads():
     return [
         {
-            "sensor_id": "temp-01",
+            "sensor_id": "TEMP-BLR,GAS-BLR,PRESS-BLR,ESTOP-BLR",
             "node_id": "node-01",
-            "temperature": 22.4,
-            "unit": "C",
+            "label": "Boiler Room",
+            "temperature": 24.4,
+            "gas_leak": "Normal",
+            "pressure_status": "Normal",
+            "emergency_stop": "Ready",
+            "unit": "mixed",
             "timestamp": "2026-07-01T00:00:00+00:00",
             "attack": "replay",
         }
@@ -39,10 +46,14 @@ def replay_payloads():
 def extreme_payloads():
     return [
         {
-            "sensor_id": "temp-01",
-            "node_id": "node-01",
-            "temperature": 80.0,
-            "unit": "C",
+            "sensor_id": "TEMP-LINE,HUM-LINE,OVERHEAT-LINE,ESTOP-LINE",
+            "node_id": "node-02",
+            "label": "Process Line",
+            "temperature": 65.0,
+            "humidity": 18.0,
+            "machine_overheat": "Overheat detected",
+            "emergency_stop": "Emergency stop active",
+            "unit": "mixed",
             "timestamp": utc_now(),
             "attack": "false_extreme",
         }
@@ -52,29 +63,47 @@ def extreme_payloads():
 def missing_payloads():
     return [
         {
-            "sensor_id": "temp-01",
+            "sensor_id": "TEMP-BLR,GAS-BLR,PRESS-BLR,ESTOP-BLR",
             "node_id": "node-01",
+            "label": "Boiler Room",
             "temperature": 22.8,
-            "unit": "C",
+            "unit": "mixed",
             "timestamp": utc_now(),
             "attack": "missing_telemetry",
         },
         {
-            "sensor_id": "humidity-01",
+            "sensor_id": "TEMP-LINE,HUM-LINE,OVERHEAT-LINE,ESTOP-LINE",
             "node_id": "node-02",
+            "label": "Process Line",
             "humidity": 48.6,
-            "unit": "%",
+            "unit": "mixed",
             "timestamp": utc_now(),
             "attack": "missing_telemetry",
         },
         {
-            "sensor_id": "occupancy-01",
+            "sensor_id": "TEMP-COLD,HUM-COLD,DOOR-COLD,AIR-COLD",
             "node_id": "node-03",
+            "label": "Cold Storage",
             "occupancy": "Occupied",
-            "unit": "state",
+            "unit": "mixed",
             "timestamp": utc_now(),
             "attack": "missing_telemetry",
         },
+    ]
+
+
+def malformed_payloads():
+    return [
+        {
+            "sensor_id": "PROTO-BAD-01",
+            "node_id": "node-01",
+            "label": "Boiler Room",
+            "temperature": "not-a-temperature",
+            "pressure_status": "???",
+            "unit": "mixed",
+            "timestamp": utc_now(),
+            "attack": "malformed_protocol",
+        }
     ]
 
 
@@ -144,6 +173,10 @@ ATTACKS = {
         "payloads": missing_payloads,
         "impact": "The air-quality sensor is omitted, showing loss of visibility rather than a malformed packet.",
     },
+    "malformed": {
+        "payloads": malformed_payloads,
+        "impact": "A syntactically valid message carries unexpected scalar values into the MQTT relay.",
+    },
     "boiler-pressure-masked": {
         "payloads": boiler_pressure_masked_payloads,
         "impact": "Boiler Room pressure is reported normal while other process readings suggest a dangerous condition.",
@@ -181,6 +214,11 @@ def main():
     for index, reading in enumerate(payloads, start=1):
         payload = json.dumps(reading, separators=(",", ":")).encode("utf-8")
         sock.sendto(payload, (args.dest, args.port))
+        node_id = reading.get("node_id", "unknown-node")
+        label = reading.get("label", reading.get("sensor_id", "unknown sensor"))
+        changed_fields = sorted(set(reading) - {"sensor_id", "node_id", "label", "unit", "timestamp", "attack"})
+        summary = ", ".join(f"{field} <- {reading[field]}" for field in changed_fields)
+        print(f"{label} ({node_id}): {summary}", flush=True)
         print(f"sent attack reading {index}/{len(payloads)}: {json.dumps(reading)}", flush=True)
         if index < len(payloads):
             time.sleep(args.interval)
