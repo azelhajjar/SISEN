@@ -1,86 +1,134 @@
-# Manual Attacks
+# SISEN Demonstration Video 7: WPA2 Handshake Capture
 
-## Purpose
+## Video Purpose
 
-Manual attacks are wireless or infrastructure activities that students perform from a separate terminal. They are not executed automatically by `attacks/run_attack.py`.
+This video demonstrates how to capture a WPA2 four-way handshake from the normal SISEN Smart Building scenario by creating a temporary monitor-mode interface and forcing one simulated node to reconnect.
 
-Use this page with the dashboard, capture guidance, and the relevant scenario or HW-AP documentation.
+---
 
-## When To Use Manual Attacks
+## 1. Start the Smart Building Scenario
 
-Manual activities include:
+### Terminal Command
 
-- open AP traffic observation
-- hidden SSID observation
-- WEP frame and IV capture
-- WPA2 handshake capture
-- rogue AP or evil-twin observation
-- MAC filtering observation and bypass
-- BLE, IoT infrastructure, and additional wireless attacks in future development
+```bash
+python3 launch_sisen.py --scenario smart-building --ap-mode wpa2 --nodes 4 --capture-hints
+```
 
-## Monitor Mode
+### Recording Cue
 
-Monitor mode is manual. Do not wire it into the SISEN launcher.
+Confirm that the scenario and dashboard are running.
 
-Create or enable a monitor-mode interface only when the activity requires over-the-air wireless frames. Use the interface name shown by your tools.
+---
 
-Example:
+## 2. Create the Monitor-Mode Interface
+
+### Terminal Commands
 
 ```bash
 sudo iw dev wlan0 interface add mon-sisen type monitor
 sudo ip link set mon-sisen up
+iw dev
 ```
 
-Do not use `-I` with tcpdump once the interface is already in monitor mode.
+### Recording Cue
 
-## Capturing
+Confirm that `mon-sisen` exists and its type is `monitor`.
 
-Write capture files under `captures/`.
+---
 
-Example:
+## 3. Set the Monitor Interface to the SISEN AP Channel
+
+### Terminal Command
 
 ```bash
-sudo tcpdump -i mon-sisen -n -vv -s 0 -w captures/manual-wireless.pcap
+sudo iw dev mon-sisen set channel 6
 ```
 
-For manual commands, explain only the values students must choose or replace, such as interface name, AP BSSID, channel, client MAC address, and capture filename. Do not describe launcher or orchestration internals unless the activity directly depends on them.
+### Recording Cue
 
-For namespace and host interface checks, use:
+Use the channel shown for the running SISEN access point.
+
+---
+
+## 4. Start the Wireless Capture
+
+### Terminal Command
 
 ```bash
-sudo ip -all netns exec ip -brief addr
-ip -brief addr
+sudo tcpdump -i mon-sisen -n -vv -s 0 -w captures/wpa2-handshake.pcap
 ```
 
-## Running Manual Activities
+### Recording Cue
 
-Use a separate terminal from the launcher. Keep the scenario, dashboard, monitor interface, and capture command visible where possible.
+Leave the capture running in a separate terminal.
 
-Record:
+---
 
-- scenario or HW-AP mode
-- AP SSID, BSSID, and channel
-- interface used for capture
-- capture filename
-- attack or observation performed
-- visible dashboard or client impact
+## 5. Identify a Simulated Node Interface
 
-## Safety And Scope
+### Terminal Commands
 
-Run manual attacks only in the controlled lab environment. Do not capture, spoof, deauthenticate, or interfere with surrounding live networks or uninvolved devices.
+```bash
+sudo ip netns list
+sudo ip netns exec room-101 ip -brief link
+```
 
-## Cleanup
+### Recording Cue
 
-Stop capture tools with `Ctrl+C`.
+Identify the wireless interface inside the selected namespace.
 
-Remove a temporary monitor interface when finished:
+---
+
+## 6. Force the Node to Reconnect
+
+### Terminal Commands
+
+```bash
+sudo ip netns exec room-101 ip link set <wireless-interface> down
+sudo ip netns exec room-101 ip link set <wireless-interface> up
+```
+
+### Recording Cue
+
+Wait for the node to reconnect to the WPA2 access point.
+
+---
+
+## 7. Stop the Capture
+
+Press:
+
+```text
+Ctrl+C
+```
+
+Open:
+
+```text
+captures/wpa2-handshake.pcap
+```
+
+---
+
+## 8. Inspect the Handshake in Wireshark
+
+### Display Filter
+
+```text
+eapol
+```
+
+### Recording Cue
+
+Show the EAPOL packets generated when the node reconnects.
+
+---
+
+## 9. Cleanup
+
+### Terminal Commands
 
 ```bash
 sudo iw dev mon-sisen del
-```
-
-Stop SISEN scenarios with:
-
-```bash
 python3 launch_sisen.py --stop
 ```
