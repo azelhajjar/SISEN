@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 import argparse
 import json
+import os
 import random
 import socket
+import tempfile
 import time
 from datetime import datetime, timezone
+from pathlib import Path
 
 REFRESH_ATTACKS = {
     "spoof",
@@ -15,6 +18,12 @@ REFRESH_ATTACKS = {
     "machine-overheat-hidden",
 }
 METADATA_FIELDS = {"sensor_id", "node_id", "label", "unit", "timestamp", "attack"}
+TARGET_STATE_FILE = Path(
+    os.environ.get(
+        "SISEN_6LOWPAN_TARGET_STATE",
+        str(Path(tempfile.gettempdir()) / "sisen-6lowpan-attack-targets.json"),
+    )
+)
 ASSETS = {
     "node-01": {
         "label": "Boiler Room",
@@ -81,9 +90,68 @@ def target_payloads(args, profiles):
             )
         node_id = args.target_node
     else:
-        node_id = random.choice(node_ids)
+        node_id = select_target(args.attack, node_ids)
 
     return [profiles[node_id]()]
+
+
+def read_target_state():
+    try:
+        with TARGET_STATE_FILE.open("r", encoding="utf-8") as handle:
+            state = json.load(handle)
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return state if isinstance(state, dict) else {}
+
+
+def write_target_state(state):
+    try:
+        TARGET_STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        temporary = TARGET_STATE_FILE.with_suffix(".tmp")
+        with temporary.open("w", encoding="utf-8") as handle:
+            json.dump(state, handle, sort_keys=True)
+        temporary.replace(TARGET_STATE_FILE)
+    except OSError:
+        pass
+
+
+def shuffled_rotation(node_ids, previous):
+    remaining = list(node_ids)
+    random.shuffle(remaining)
+    if previous in remaining and len(remaining) > 1 and remaining[0] == previous:
+        remaining.append(remaining.pop(0))
+    return remaining
+
+
+def select_target(attack_name, node_ids):
+    if len(node_ids) == 1:
+        return node_ids[0]
+
+    state = read_target_state()
+    attack_state = state.get(attack_name, {})
+    if not isinstance(attack_state, dict):
+        attack_state = {}
+
+    previous = attack_state.get("last")
+    if previous not in node_ids:
+        previous = None
+
+    remaining = attack_state.get("remaining", [])
+    if not isinstance(remaining, list):
+        remaining = []
+    remaining = [node_id for node_id in remaining if node_id in node_ids]
+
+    if not remaining:
+        remaining = shuffled_rotation(node_ids, previous)
+
+    selected = remaining.pop(0)
+    if selected == previous and remaining:
+        remaining.append(selected)
+        selected = remaining.pop(0)
+
+    state[attack_name] = {"last": selected, "remaining": remaining}
+    write_target_state(state)
+    return selected
 
 
 def spoof_payloads(args):
