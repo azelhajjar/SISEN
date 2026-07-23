@@ -8,9 +8,45 @@ layer.
 """
 
 import argparse
+import os
 import time
 
 import paho.mqtt.publish as publish
+
+DEFAULT_MEDICAL_PATIENT_COUNT = 4
+MAX_MEDICAL_PATIENT_COUNT = 10
+
+
+def active_medical_patient_count():
+    try:
+        count = int(os.environ.get("SISEN_PATIENT_COUNT", str(DEFAULT_MEDICAL_PATIENT_COUNT)))
+    except ValueError:
+        count = DEFAULT_MEDICAL_PATIENT_COUNT
+    return max(1, min(count, MAX_MEDICAL_PATIENT_COUNT))
+
+
+def medical_components():
+    fields = {
+        "heart_rate": "vitals/heart_rate",
+        "spo2": "vitals/spo2",
+        "blood_pressure": "vitals/blood_pressure",
+        "fall_alert": "alerts/fall_alert",
+        "panic_button": "alerts/panic_button",
+        "battery_status": "alerts/battery_status",
+        "wearable_link": "alerts/wearable_link",
+    }
+    count = active_medical_patient_count()
+    return {
+        f"patient-{index}": {
+            "label": f"Patient {index}",
+            "topic_prefix": f"patient/patient-{index}",
+            "aggregate_prefix": "patient/vitals",
+            "fields": fields,
+            "aggregate_fields": {"heart_rate", "spo2", "blood_pressure"},
+            "aggregate_source": index == 1,
+        }
+        for index in range(1, count + 1)
+    }
 
 
 SCENARIOS = {
@@ -157,105 +193,112 @@ SCENARIOS = {
     },
     "medical": {
         "description": "Medical wearable telemetry",
-        "components": {
-            "patient-01": {
-                "label": "Patient 01",
-                "topic_prefix": "patient/patient-01",
-                "aggregate_prefix": "patient/vitals",
-                "fields": {
-                    "heart_rate": "vitals/heart_rate",
-                    "spo2": "vitals/spo2",
-                    "blood_pressure": "vitals/blood_pressure",
-                    "fall_alert": "alerts/fall_alert",
-                    "panic_button": "alerts/panic_button",
-                    "battery_status": "alerts/battery_status",
-                    "wearable_link": "alerts/wearable_link",
-                },
-                "aggregate_fields": {"heart_rate", "spo2", "blood_pressure"},
-            },
-        },
+        "components": medical_components,
         "attacks": {
             "spoofed": {
-                "purpose": "Plausible false patient state that creates a false emergency.",
+                "purpose": "Plausible false patient states while impersonating selected wearables.",
                 "payloads": [
-                    ("patient-01", "heart_rate", "96"),
-                    ("patient-01", "spo2", "95"),
-                    ("patient-01", "blood_pressure", "138/88"),
-                    ("patient-01", "fall_alert", "Fall detected"),
-                    ("patient-01", "panic_button", "Not pressed"),
-                    ("patient-01", "battery_status", "Normal"),
+                    ("patient-2", "heart_rate", "96"),
+                    ("patient-2", "spo2", "95"),
+                    ("patient-2", "blood_pressure", "138/88"),
+                    ("patient-2", "fall_alert", "Fall detected"),
+                    ("patient-2", "panic_button", "Not pressed"),
+                    ("patient-2", "battery_status", "Normal"),
+                    ("patient-3", "heart_rate", "88"),
+                    ("patient-3", "spo2", "96"),
+                    ("patient-3", "blood_pressure", "132/84"),
+                    ("patient-3", "fall_alert", "No fall"),
+                    ("patient-3", "panic_button", "Pressed"),
+                    ("patient-3", "battery_status", "Normal"),
                 ],
             },
             "extreme": {
-                "purpose": "Unsafe and physiologically concerning vital signs.",
+                "purpose": "Unsafe and inconsistent patient states across several wearables.",
                 "payloads": [
-                    ("patient-01", "heart_rate", "145"),
-                    ("patient-01", "spo2", "82"),
-                    ("patient-01", "blood_pressure", "190/120"),
-                    ("patient-01", "fall_alert", "Fall detected"),
-                    ("patient-01", "panic_button", "Pressed"),
-                    ("patient-01", "battery_status", "Battery critical"),
+                    ("patient-1", "heart_rate", "145"),
+                    ("patient-1", "spo2", "82"),
+                    ("patient-1", "blood_pressure", "190/120"),
+                    ("patient-1", "fall_alert", "Fall detected"),
+                    ("patient-1", "panic_button", "Pressed"),
+                    ("patient-1", "battery_status", "Battery critical"),
+                    ("patient-2", "heart_rate", "42"),
+                    ("patient-2", "spo2", "88"),
+                    ("patient-2", "blood_pressure", "86/54"),
+                    ("patient-2", "fall_alert", "No fall"),
+                    ("patient-2", "wearable_link", "Connected"),
+                    ("patient-3", "heart_rate", "128"),
+                    ("patient-3", "spo2", "91"),
+                    ("patient-3", "blood_pressure", "176/110"),
+                    ("patient-3", "panic_button", "Pressed"),
+                    ("patient-4", "heart_rate", "118"),
+                    ("patient-4", "spo2", "84"),
+                    ("patient-4", "blood_pressure", "152/98"),
+                    ("patient-4", "battery_status", "Battery critical"),
                 ],
             },
             "replay": {
                 "purpose": "Repeated stale but plausible patient readings.",
                 "payloads": [
-                    ("patient-01", "heart_rate", "67"),
-                    ("patient-01", "spo2", "99"),
-                    ("patient-01", "blood_pressure", "118/76"),
-                    ("patient-01", "fall_alert", "No fall"),
-                    ("patient-01", "panic_button", "Not pressed"),
-                    ("patient-01", "battery_status", "Normal"),
+                    ("patient-2", "heart_rate", "67"),
+                    ("patient-2", "spo2", "99"),
+                    ("patient-2", "blood_pressure", "118/76"),
+                    ("patient-2", "fall_alert", "No fall"),
+                    ("patient-2", "panic_button", "Not pressed"),
+                    ("patient-2", "battery_status", "Normal"),
                 ],
             },
             "malformed": {
                 "purpose": "Unexpected patient payload formats that classify as unknown or ambiguous.",
                 "payloads": [
-                    ("patient-01", "heart_rate", "fast"),
-                    ("patient-01", "spo2", "NaN"),
-                    ("patient-01", "blood_pressure", "broken"),
-                    ("patient-01", "fall_alert", "unknown"),
-                    ("patient-01", "panic_button", "maybe"),
-                    ("patient-01", "battery_status", ""),
+                    ("patient-3", "heart_rate", "fast"),
+                    ("patient-3", "spo2", "NaN"),
+                    ("patient-3", "blood_pressure", "broken"),
+                    ("patient-3", "fall_alert", "unknown"),
+                    ("patient-4", "panic_button", "maybe"),
+                    ("patient-4", "battery_status", ""),
                 ],
             },
             "noise": {
-                "purpose": "Bounded competing patient updates without stopping the live gateway.",
+                "purpose": "Bounded competing patient updates across multiple wearables without stopping the live gateway.",
                 "payloads": [
-                    ("patient-01", "heart_rate", "74"),
-                    ("patient-01", "heart_rate", "104"),
-                    ("patient-01", "spo2", "97"),
-                    ("patient-01", "spo2", "94"),
-                    ("patient-01", "wearable_link", "Disconnected"),
-                    ("patient-01", "wearable_link", "Connected"),
+                    ("patient-1", "heart_rate", "74"),
+                    ("patient-1", "heart_rate", "104"),
+                    ("patient-1", "spo2", "97"),
+                    ("patient-1", "spo2", "94"),
+                    ("patient-2", "wearable_link", "Disconnected"),
+                    ("patient-2", "wearable_link", "Connected"),
+                    ("patient-3", "panic_button", "Not pressed"),
+                    ("patient-3", "panic_button", "Pressed"),
+                    ("patient-4", "battery_status", "Normal"),
+                    ("patient-4", "battery_status", "Battery critical"),
                 ],
             },
             "fall-alert-suppressed": {
                 "purpose": "Safety case: deteriorating vitals while fall status remains falsely normal.",
                 "payloads": [
-                    ("patient-01", "heart_rate", "112"),
-                    ("patient-01", "spo2", "93"),
-                    ("patient-01", "blood_pressure", "148/96"),
-                    ("patient-01", "fall_alert", "No fall"),
+                    ("patient-2", "heart_rate", "112"),
+                    ("patient-2", "spo2", "93"),
+                    ("patient-2", "blood_pressure", "148/96"),
+                    ("patient-2", "fall_alert", "No fall"),
                 ],
             },
             "battery-falsely-normal": {
                 "purpose": "Safety case: wearable link reliability risk while battery appears normal.",
                 "payloads": [
-                    ("patient-01", "heart_rate", "76"),
-                    ("patient-01", "spo2", "98"),
-                    ("patient-01", "blood_pressure", "122/78"),
-                    ("patient-01", "wearable_link", "Disconnected"),
-                    ("patient-01", "battery_status", "Normal"),
+                    ("patient-4", "heart_rate", "76"),
+                    ("patient-4", "spo2", "98"),
+                    ("patient-4", "blood_pressure", "122/78"),
+                    ("patient-4", "wearable_link", "Disconnected"),
+                    ("patient-4", "battery_status", "Normal"),
                 ],
             },
             "panic-button-suppressed": {
                 "purpose": "Safety case: unsafe vitals while the panic button remains falsely unpressed.",
                 "payloads": [
-                    ("patient-01", "heart_rate", "132"),
-                    ("patient-01", "spo2", "91"),
-                    ("patient-01", "blood_pressure", "176/110"),
-                    ("patient-01", "panic_button", "Not pressed"),
+                    ("patient-3", "heart_rate", "132"),
+                    ("patient-3", "spo2", "91"),
+                    ("patient-3", "blood_pressure", "176/110"),
+                    ("patient-3", "panic_button", "Not pressed"),
                 ],
             },
         },
@@ -272,7 +315,7 @@ ATTACKS = tuple(
 def event_topics(component, field):
     field_topic = component["fields"][field]
     topics = [f"{component['topic_prefix']}/{field_topic}"]
-    if field in component.get("aggregate_fields", set()):
+    if component.get("aggregate_source") and field in component.get("aggregate_fields", set()):
         topics.append(f"{component['aggregate_prefix']}/{field}")
     elif component.get("generic_prefix"):
         topics.append(f"{component['generic_prefix']}/{field}")
@@ -289,6 +332,12 @@ def publish_event(host, port, component_id, component, field, payload):
 
 def publish_payloads(host, port, components, payloads, delay):
     for component_id, field, payload in payloads:
+        if component_id not in components:
+            available = ", ".join(sorted(components))
+            raise SystemExit(
+                f"Attack references {component_id}, but active components are: {available}. "
+                "For Medical attacks, set SISEN_PATIENT_COUNT to match the running scenario."
+            )
         component = components[component_id]
         if field not in component["fields"]:
             raise SystemExit(f"Attack references unsupported field {component_id}.{field}.")
@@ -301,13 +350,16 @@ def run_attack(args):
     scenario = SCENARIO_ALIASES.get(args.scenario, args.scenario)
     profile = SCENARIOS[scenario]
     attack = profile["attacks"][args.attack]
-    components = profile["components"]
+    components_spec = profile["components"]
+    components = components_spec() if callable(components_spec) else components_spec
     payloads = attack["payloads"]
 
     print(f"SISEN MQTT attack demo: {args.attack}")
     print(f"Scenario: {args.scenario} ({profile['description']})")
     print(f"Purpose: {attack['purpose']}")
     print(f"Broker: {args.host}:{args.port}")
+    if scenario == "medical":
+        print(f"Active Medical patients: {', '.join(sorted(components))}")
     print()
 
     if args.attack == "noise":

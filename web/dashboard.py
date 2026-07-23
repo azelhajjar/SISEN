@@ -660,6 +660,14 @@ def update_topic(topic, payload):
     }
 
 
+def configured_patient_ids():
+    return {f"patient-{index}" for index in range(1, configured_patient_count() + 1)}
+
+
+def log_medical_mqtt(topic, message):
+    print(f"[medical mqtt] {topic}: {message}", flush=True)
+
+
 def on_connect(client, userdata, flags, rc, properties=None):
     with data_lock:
         mqtt_state["connected"] = rc == 0
@@ -685,6 +693,8 @@ def on_disconnect(client, userdata, rc, properties=None):
 def on_message(client, userdata, msg):
     topic = msg.topic
     payload = msg.payload.decode(errors="replace")
+    patient_topic = topic.startswith("patient/")
+    patient_handled = False
 
     with data_lock:
         update_topic(topic, payload)
@@ -706,6 +716,7 @@ def on_message(client, userdata, msg):
 
         patient_match = PATIENT_VITAL_RE.match(topic)
         if patient_match:
+            patient_handled = True
             patient_id = patient_match.group("patient_id")
             field = patient_match.group("field")
             patient = latest_data["patients"].setdefault(
@@ -719,9 +730,16 @@ def on_message(client, userdata, msg):
                 patient["spo2_status"] = classify_spo2(payload)
             if field == "blood_pressure":
                 patient["blood_pressure_status"] = classify_blood_pressure(payload)
+            visible = patient_id in configured_patient_ids()
+            log_medical_mqtt(
+                topic,
+                f"patient vital parsed; updated {patient_id}.{field}={payload!r}; "
+                f"visible={visible}",
+            )
 
         patient_alert_match = PATIENT_ALERT_RE.match(topic)
         if patient_alert_match:
+            patient_handled = True
             patient_id = patient_alert_match.group("patient_id")
             field = patient_alert_match.group("field")
             patient = latest_data["patients"].setdefault(
@@ -730,9 +748,16 @@ def on_message(client, userdata, msg):
             )
             patient[field] = payload
             update_patient_alert_status(patient)
+            visible = patient_id in configured_patient_ids()
+            log_medical_mqtt(
+                topic,
+                f"patient alert parsed; updated {patient_id}.{field}={payload!r}; "
+                f"alert_status={patient.get('alert_status')}; visible={visible}",
+            )
 
         patient_meta_match = PATIENT_META_RE.match(topic)
         if patient_meta_match:
+            patient_handled = True
             patient_id = patient_meta_match.group("patient_id")
             field = patient_meta_match.group("field")
             patient = latest_data["patients"].setdefault(
@@ -740,8 +765,15 @@ def on_message(client, userdata, msg):
                 {"patient_id": patient_id, "label": patient_id.replace("-", " ").title()},
             )
             patient[field] = payload
+            visible = patient_id in configured_patient_ids()
+            log_medical_mqtt(
+                topic,
+                f"patient metadata parsed; updated {patient_id}.{field}={payload!r}; "
+                f"visible={visible}",
+            )
 
         if topic == "patient/vitals/heart_rate":
+            patient_handled = True
             latest_data["heart_rate"] = payload
             latest_data["heart_rate_status"] = classify_heart_rate(payload)
             try:
@@ -749,14 +781,34 @@ def on_message(client, userdata, msg):
                 latest_data["heart_rate_history"] = latest_data["heart_rate_history"][-20:]
             except ValueError:
                 pass
+            log_medical_mqtt(
+                topic,
+                f"aggregate vital parsed; updated heart_rate={payload!r}; "
+                f"status={latest_data['heart_rate_status']}",
+            )
 
         if topic == "patient/vitals/spo2":
+            patient_handled = True
             latest_data["spo2"] = payload
             latest_data["spo2_status"] = classify_spo2(payload)
+            log_medical_mqtt(
+                topic,
+                f"aggregate vital parsed; updated spo2={payload!r}; "
+                f"status={latest_data['spo2_status']}",
+            )
 
         if topic == "patient/vitals/blood_pressure":
+            patient_handled = True
             latest_data["blood_pressure"] = payload
             latest_data["blood_pressure_status"] = classify_blood_pressure(payload)
+            log_medical_mqtt(
+                topic,
+                f"aggregate vital parsed; updated blood_pressure={payload!r}; "
+                f"status={latest_data['blood_pressure_status']}",
+            )
+
+        if patient_topic and not patient_handled:
+            log_medical_mqtt(topic, f"ignored; no Medical dashboard parser matched payload={payload!r}")
 
 def mqtt_listener(host, port):
     client = mqtt.Client()
