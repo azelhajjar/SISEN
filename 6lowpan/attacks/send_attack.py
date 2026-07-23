@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import json
+import random
 import socket
 import time
 from datetime import datetime, timezone
@@ -14,156 +15,255 @@ REFRESH_ATTACKS = {
     "machine-overheat-hidden",
 }
 METADATA_FIELDS = {"sensor_id", "node_id", "label", "unit", "timestamp", "attack"}
+ASSETS = {
+    "node-01": {
+        "label": "Boiler Room",
+        "sensor_id": "TEMP-BLR,GAS-BLR,PRESS-BLR,ESTOP-BLR",
+        "fields": {"temperature", "gas_leak", "pressure_status", "emergency_stop"},
+    },
+    "node-02": {
+        "label": "Process Line",
+        "sensor_id": "TEMP-LINE,HUM-LINE,OVERHEAT-LINE,ESTOP-LINE",
+        "fields": {"temperature", "humidity", "machine_overheat", "emergency_stop"},
+    },
+    "node-03": {
+        "label": "Cold Storage",
+        "sensor_id": "TEMP-COLD,HUM-COLD,DOOR-COLD,AIR-COLD",
+        "fields": {"temperature", "humidity", "occupancy", "air_quality"},
+    },
+    "node-04": {
+        "label": "Loading Bay",
+        "sensor_id": "TEMP-BAY,GAS-BAY,OCC-BAY,AIR-BAY",
+        "fields": {"temperature", "gas_leak", "occupancy", "air_quality"},
+    },
+}
+ELIGIBLE_TARGETS = {
+    "spoof": ["node-03", "node-04"],
+    "replay": ["node-01", "node-03", "node-04"],
+    "extreme": ["node-01", "node-02", "node-04"],
+    "missing": ["node-01", "node-02", "node-03"],
+    "malformed": ["node-01", "node-03"],
+    "boiler-pressure-masked": ["node-01"],
+    "emergency-stop-hidden": ["node-01", "node-02"],
+    "machine-overheat-hidden": ["node-02"],
+}
 
 
 def utc_now():
     return datetime.now(timezone.utc).isoformat()
 
 
-def spoof_payloads():
-    return [
+def reading_for(node_id, values, attack, timestamp=None, sensor_id=None):
+    asset = ASSETS[node_id]
+    unsupported = sorted(set(values) - asset["fields"])
+    if unsupported:
+        raise ValueError(f"{asset['label']} ({node_id}) does not support fields: {', '.join(unsupported)}")
+    reading = {
+        "sensor_id": sensor_id or asset["sensor_id"],
+        "node_id": node_id,
+        "label": asset["label"],
+        "unit": "mixed",
+        "timestamp": timestamp or utc_now(),
+        "attack": attack,
+    }
+    reading.update(values)
+    return reading
+
+
+def target_payloads(args, profiles):
+    node_ids = list(profiles)
+    if args.target_node:
+        if args.target_node not in profiles:
+            available = ", ".join(node_ids)
+            raise SystemExit(
+                f"{args.attack} cannot target {args.target_node}. "
+                f"Eligible targets: {available}"
+            )
+        node_id = args.target_node
+    else:
+        node_id = random.choice(node_ids)
+
+    return [profiles[node_id]()]
+
+
+def spoof_payloads(args):
+    return target_payloads(
+        args,
         {
-            "sensor_id": "GAS-BAY-ROGUE",
-            "node_id": "node-04",
-            "label": "Loading Bay",
-            "gas_leak": "Gas detected",
-            "occupancy": "Occupied",
-            "air_quality": 760.0,
-            "unit": "mixed",
-            "timestamp": utc_now(),
-            "attack": "spoof",
-        }
-    ]
-
-
-def replay_payloads():
-    return [
-        {
-            "sensor_id": "TEMP-BLR,GAS-BLR,PRESS-BLR,ESTOP-BLR",
-            "node_id": "node-01",
-            "label": "Boiler Room",
-            "temperature": 24.4,
-            "gas_leak": "Normal",
-            "pressure_status": "Normal",
-            "emergency_stop": "Ready",
-            "unit": "mixed",
-            "timestamp": "2026-07-01T00:00:00+00:00",
-            "attack": "replay",
-        }
-    ]
-
-
-def extreme_payloads():
-    return [
-        {
-            "sensor_id": "TEMP-LINE,HUM-LINE,OVERHEAT-LINE,ESTOP-LINE",
-            "node_id": "node-02",
-            "label": "Process Line",
-            "temperature": 65.0,
-            "humidity": 18.0,
-            "machine_overheat": "Overheat detected",
-            "emergency_stop": "Emergency stop active",
-            "unit": "mixed",
-            "timestamp": utc_now(),
-            "attack": "false_extreme",
-        }
-    ]
-
-
-def missing_payloads():
-    return [
-        {
-            "sensor_id": "TEMP-BLR,GAS-BLR,PRESS-BLR,ESTOP-BLR",
-            "node_id": "node-01",
-            "label": "Boiler Room",
-            "temperature": 22.8,
-            "unit": "mixed",
-            "timestamp": utc_now(),
-            "attack": "missing_telemetry",
+            "node-03": lambda: reading_for(
+                "node-03",
+                {"air_quality": 760.0, "occupancy": "Occupied", "temperature": 9.4},
+                "spoof",
+                sensor_id="COLD-STORE-ROGUE",
+            ),
+            "node-04": lambda: reading_for(
+                "node-04",
+                {"air_quality": 760.0, "gas_leak": "Gas detected", "occupancy": "Occupied"},
+                "spoof",
+                sensor_id="GAS-BAY-ROGUE",
+            ),
         },
+    )
+
+
+def replay_payloads(args):
+    stale_time = "2026-07-01T00:00:00+00:00"
+    return target_payloads(
+        args,
         {
-            "sensor_id": "TEMP-LINE,HUM-LINE,OVERHEAT-LINE,ESTOP-LINE",
-            "node_id": "node-02",
-            "label": "Process Line",
-            "humidity": 48.6,
-            "unit": "mixed",
-            "timestamp": utc_now(),
-            "attack": "missing_telemetry",
+            "node-01": lambda: reading_for(
+                "node-01",
+                {
+                    "temperature": 24.4,
+                    "gas_leak": "Normal",
+                    "pressure_status": "Normal",
+                    "emergency_stop": "Ready",
+                },
+                "replay",
+                timestamp=stale_time,
+            ),
+            "node-03": lambda: reading_for(
+                "node-03",
+                {
+                    "temperature": 4.8,
+                    "humidity": 58.0,
+                    "occupancy": "Vacant",
+                    "air_quality": 520.0,
+                },
+                "replay",
+                timestamp=stale_time,
+            ),
+            "node-04": lambda: reading_for(
+                "node-04",
+                {
+                    "temperature": 20.1,
+                    "gas_leak": "Normal",
+                    "occupancy": "Vacant",
+                    "air_quality": 610.0,
+                },
+                "replay",
+                timestamp=stale_time,
+            ),
         },
+    )
+
+
+def extreme_payloads(args):
+    return target_payloads(
+        args,
         {
-            "sensor_id": "TEMP-COLD,HUM-COLD,DOOR-COLD,AIR-COLD",
-            "node_id": "node-03",
-            "label": "Cold Storage",
-            "occupancy": "Occupied",
-            "unit": "mixed",
-            "timestamp": utc_now(),
-            "attack": "missing_telemetry",
+            "node-01": lambda: reading_for(
+                "node-01",
+                {
+                    "temperature": 78.0,
+                    "gas_leak": "Gas detected",
+                    "pressure_status": "Pressure abnormal",
+                    "emergency_stop": "Emergency stop active",
+                },
+                "false_extreme",
+            ),
+            "node-02": lambda: reading_for(
+                "node-02",
+                {
+                    "temperature": 65.0,
+                    "humidity": 18.0,
+                    "machine_overheat": "Overheat detected",
+                    "emergency_stop": "Emergency stop active",
+                },
+                "false_extreme",
+            ),
+            "node-04": lambda: reading_for(
+                "node-04",
+                {
+                    "temperature": 67.5,
+                    "gas_leak": "Gas detected",
+                    "occupancy": "Occupied",
+                    "air_quality": 2400.0,
+                },
+                "false_extreme",
+            ),
         },
-    ]
+    )
 
 
-def malformed_payloads():
-    return [
+def missing_payloads(args):
+    return target_payloads(
+        args,
         {
-            "sensor_id": "PROTO-BAD-01",
-            "node_id": "node-01",
-            "label": "Boiler Room",
-            "temperature": "not-a-temperature",
-            "pressure_status": "???",
-            "unit": "mixed",
-            "timestamp": utc_now(),
-            "attack": "malformed_protocol",
-        }
-    ]
+            "node-01": lambda: reading_for("node-01", {"temperature": 22.8}, "missing_telemetry"),
+            "node-02": lambda: reading_for("node-02", {"humidity": 48.6}, "missing_telemetry"),
+            "node-03": lambda: reading_for("node-03", {"occupancy": "Occupied"}, "missing_telemetry"),
+        },
+    )
 
 
-def boiler_pressure_masked_payloads():
-    return [
+def malformed_payloads(args):
+    return target_payloads(
+        args,
         {
-            "sensor_id": "TEMP-BLR,GAS-BLR,PRESS-BLR,ESTOP-BLR",
-            "node_id": "node-01",
-            "label": "Boiler Room",
-            "temperature": 78.4,
-            "gas_leak": "Normal",
-            "pressure_status": "Normal",
-            "emergency_stop": "Ready",
-            "unit": "mixed",
-            "timestamp": utc_now(),
-            "attack": "boiler_pressure_masked",
-        }
-    ]
+            "node-01": lambda: reading_for(
+                "node-01",
+                {"temperature": "not-a-temperature", "pressure_status": "???"},
+                "malformed_protocol",
+                sensor_id="PROTO-BAD-01",
+            ),
+            "node-03": lambda: reading_for(
+                "node-03",
+                {"temperature": "not-a-temperature", "air_quality": "opaque"},
+                "malformed_protocol",
+                sensor_id="PROTO-BAD-03",
+            ),
+        },
+    )
 
 
-def emergency_stop_hidden_payloads():
-    return [
+def boiler_pressure_masked_payloads(args):
+    return target_payloads(
+        args,
         {
-            "sensor_id": "TEMP-BLR,GAS-BLR,PRESS-BLR,ESTOP-BLR",
-            "node_id": "node-01",
-            "label": "Boiler Room",
-            "temperature": 74.9,
-            "pressure_status": "Pressure abnormal",
-            "emergency_stop": "Ready",
-            "unit": "mixed",
-            "timestamp": utc_now(),
-            "attack": "emergency_stop_hidden",
-        }
-    ]
+            "node-01": lambda: reading_for(
+                "node-01",
+                {
+                    "temperature": 78.4,
+                    "gas_leak": "Normal",
+                    "pressure_status": "Normal",
+                    "emergency_stop": "Ready",
+                },
+                "boiler_pressure_masked",
+            ),
+        },
+    )
 
 
-def machine_overheat_hidden_payloads():
-    return [
+def emergency_stop_hidden_payloads(args):
+    return target_payloads(
+        args,
         {
-            "sensor_id": "TEMP-LINE,HUM-LINE,OVERHEAT-LINE,ESTOP-LINE",
-            "node_id": "node-02",
-            "label": "Process Line",
-            "temperature": 86.3,
-            "machine_overheat": "Normal",
-            "emergency_stop": "Ready",
-            "unit": "mixed",
-            "timestamp": utc_now(),
-            "attack": "machine_overheat_hidden",
-        }
-    ]
+            "node-01": lambda: reading_for(
+                "node-01",
+                {"temperature": 74.9, "pressure_status": "Pressure abnormal", "emergency_stop": "Ready"},
+                "emergency_stop_hidden",
+            ),
+            "node-02": lambda: reading_for(
+                "node-02",
+                {"temperature": 76.2, "machine_overheat": "Overheat detected", "emergency_stop": "Ready"},
+                "emergency_stop_hidden",
+            ),
+        },
+    )
+
+
+def machine_overheat_hidden_payloads(args):
+    return target_payloads(
+        args,
+        {
+            "node-02": lambda: reading_for(
+                "node-02",
+                {"temperature": 86.3, "machine_overheat": "Normal", "emergency_stop": "Ready"},
+                "machine_overheat_hidden",
+            ),
+        },
+    )
 
 
 ATTACKS = {
@@ -219,6 +319,11 @@ def attack_target(payloads):
     return targets[0] if len(targets) == 1 else ", ".join(targets)
 
 
+def eligible_targets_for(attack_name, payloads):
+    node_ids = ELIGIBLE_TARGETS.get(attack_name, [reading["node_id"] for reading in payloads])
+    return [f"{ASSETS[node_id]['label']} ({node_id})" for node_id in node_ids]
+
+
 def changed_fields(reading):
     return sorted(set(reading) - METADATA_FIELDS)
 
@@ -247,6 +352,7 @@ def main():
     parser.add_argument("--interval", type=float, default=0.5, help="Seconds between payloads.")
     parser.add_argument("--duration", type=float, default=10.0, help="Seconds to refresh applicable attacks.")
     parser.add_argument("--count", type=int, default=5, help="Repeat count for replay attacks.")
+    parser.add_argument("--target-node", choices=sorted(ASSETS), help="Optional deterministic target override.")
     args = parser.parse_args()
 
     if args.interval <= 0:
@@ -257,12 +363,15 @@ def main():
         parser.error("--count must be at least 1")
 
     attack = ATTACKS[args.attack]
-    payloads = attack["payloads"]()
+    payloads = attack["payloads"](args)
     refresh_attack = args.attack in REFRESH_ATTACKS
 
     print(f"SISEN 6LoWPAN attack demo: {display_attack_name(args.attack)}", flush=True)
     print("Scenario: 6lowpan", flush=True)
     print(f"Target: {attack_target(payloads)}", flush=True)
+    eligible_targets = eligible_targets_for(args.attack, payloads)
+    if len(eligible_targets) == 1:
+        print(f"Eligible targets: {eligible_targets[0]} only", flush=True)
     print(f"Purpose: {attack['impact']}", flush=True)
     print(flush=True)
 
