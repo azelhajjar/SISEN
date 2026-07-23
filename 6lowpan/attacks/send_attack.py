@@ -14,6 +14,7 @@ def spoof_payloads():
     return [
         {
             "sensor_id": "temp-rogue",
+            "node_id": "node-01",
             "temperature": 19.9,
             "unit": "C",
             "timestamp": utc_now(),
@@ -26,6 +27,7 @@ def replay_payloads():
     return [
         {
             "sensor_id": "temp-01",
+            "node_id": "node-01",
             "temperature": 22.4,
             "unit": "C",
             "timestamp": "2026-07-01T00:00:00+00:00",
@@ -38,6 +40,7 @@ def extreme_payloads():
     return [
         {
             "sensor_id": "temp-01",
+            "node_id": "node-01",
             "temperature": 80.0,
             "unit": "C",
             "timestamp": utc_now(),
@@ -50,6 +53,7 @@ def missing_payloads():
     return [
         {
             "sensor_id": "temp-01",
+            "node_id": "node-01",
             "temperature": 22.8,
             "unit": "C",
             "timestamp": utc_now(),
@@ -57,6 +61,7 @@ def missing_payloads():
         },
         {
             "sensor_id": "humidity-01",
+            "node_id": "node-02",
             "humidity": 48.6,
             "unit": "%",
             "timestamp": utc_now(),
@@ -64,6 +69,7 @@ def missing_payloads():
         },
         {
             "sensor_id": "occupancy-01",
+            "node_id": "node-03",
             "occupancy": "Occupied",
             "unit": "state",
             "timestamp": utc_now(),

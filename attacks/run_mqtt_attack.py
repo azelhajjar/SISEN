@@ -27,9 +27,15 @@ SCENARIOS = {
             "node_01_fire_alarm": "building/nodes/node-01/fire_alarm",
             "node_01_occupancy": "building/nodes/node-01/occupancy",
             "node_01_gas_leak": "building/nodes/node-01/gas_leak",
+            "node_02_humidity": "building/nodes/node-02/humidity",
+            "node_02_air_quality": "building/nodes/node-02/air_quality",
             "node_03_smoke": "building/nodes/node-03/smoke",
             "node_03_exit_status": "building/nodes/node-03/exit_status",
             "node_03_sprinkler_status": "building/nodes/node-03/sprinkler_status",
+            "node_04_temperature": "building/nodes/node-04/temperature",
+            "node_04_air_quality": "building/nodes/node-04/air_quality",
+            "node_04_occupancy": "building/nodes/node-04/occupancy",
+            "node_04_gas_leak": "building/nodes/node-04/gas_leak",
         },
         "spoofed": {
             "temperature": "23.40",
@@ -38,6 +44,10 @@ SCENARIOS = {
             "occupancy": "Occupied",
             "fire_alarm": "Normal",
             "gas_leak": "Normal",
+            "node_01_temperature": "23.40",
+            "node_01_fire_alarm": "Normal",
+            "node_01_occupancy": "Occupied",
+            "node_01_gas_leak": "Normal",
         },
         "extreme": {
             "temperature": "85.00",
@@ -46,6 +56,16 @@ SCENARIOS = {
             "occupancy": "Occupied",
             "fire_alarm": "Fire detected",
             "gas_leak": "Gas detected",
+            "node_01_temperature": "85.00",
+            "node_01_fire_alarm": "Fire detected",
+            "node_01_occupancy": "Occupied",
+            "node_01_gas_leak": "Gas detected",
+            "node_02_humidity": "5.00",
+            "node_02_air_quality": "5000",
+            "node_04_temperature": "85.00",
+            "node_04_air_quality": "5000",
+            "node_04_occupancy": "Occupied",
+            "node_04_gas_leak": "Gas detected",
         },
         "replay": {
             "temperature": "21.10",
@@ -54,6 +74,10 @@ SCENARIOS = {
             "occupancy": "Vacant",
             "fire_alarm": "Normal",
             "gas_leak": "Normal",
+            "node_01_temperature": "21.10",
+            "node_01_fire_alarm": "Normal",
+            "node_01_occupancy": "Vacant",
+            "node_01_gas_leak": "Normal",
         },
         "malformed": {
             "temperature": "not-a-temperature",
@@ -62,6 +86,10 @@ SCENARIOS = {
             "occupancy": "",
             "fire_alarm": "???",
             "gas_leak": "",
+            "node_01_temperature": "not-a-temperature",
+            "node_01_fire_alarm": "???",
+            "node_01_occupancy": "",
+            "node_01_gas_leak": "",
         },
         "gas-leak-hidden": {
             "node_01_gas_leak": "Normal",
@@ -85,6 +113,9 @@ SCENARIOS = {
             "heart_rate": "patient/vitals/heart_rate",
             "spo2": "patient/vitals/spo2",
             "blood_pressure": "patient/vitals/blood_pressure",
+            "patient_01_heart_rate": "patient/patient-01/vitals/heart_rate",
+            "patient_01_spo2": "patient/patient-01/vitals/spo2",
+            "patient_01_blood_pressure": "patient/patient-01/vitals/blood_pressure",
             "fall_alert": "patient/patient-01/alerts/fall_alert",
             "panic_button": "patient/patient-01/alerts/panic_button",
             "battery_status": "patient/patient-01/alerts/battery_status",
@@ -93,6 +124,9 @@ SCENARIOS = {
             "heart_rate": "78",
             "spo2": "98",
             "blood_pressure": "122/78",
+            "patient_01_heart_rate": "78",
+            "patient_01_spo2": "98",
+            "patient_01_blood_pressure": "122/78",
             "fall_alert": "No fall",
             "panic_button": "Not pressed",
             "battery_status": "Normal",
@@ -101,6 +135,9 @@ SCENARIOS = {
             "heart_rate": "145",
             "spo2": "82",
             "blood_pressure": "190/120",
+            "patient_01_heart_rate": "145",
+            "patient_01_spo2": "82",
+            "patient_01_blood_pressure": "190/120",
             "fall_alert": "Fall detected",
             "panic_button": "Pressed",
             "battery_status": "Battery critical",
@@ -109,6 +146,9 @@ SCENARIOS = {
             "heart_rate": "67",
             "spo2": "99",
             "blood_pressure": "118/76",
+            "patient_01_heart_rate": "67",
+            "patient_01_spo2": "99",
+            "patient_01_blood_pressure": "118/76",
             "fall_alert": "No fall",
             "panic_button": "Not pressed",
             "battery_status": "Normal",
@@ -117,6 +157,9 @@ SCENARIOS = {
             "heart_rate": "fast",
             "spo2": "NaN",
             "blood_pressure": "broken",
+            "patient_01_heart_rate": "fast",
+            "patient_01_spo2": "NaN",
+            "patient_01_blood_pressure": "broken",
             "fall_alert": "unknown",
             "panic_button": "maybe",
             "battery_status": "",
@@ -125,6 +168,9 @@ SCENARIOS = {
             "heart_rate": "112",
             "spo2": "93",
             "blood_pressure": "148/96",
+            "patient_01_heart_rate": "112",
+            "patient_01_spo2": "93",
+            "patient_01_blood_pressure": "148/96",
             "fall_alert": "No fall",
             "panic_button": "Not pressed",
             "battery_status": "Normal",
@@ -133,6 +179,9 @@ SCENARIOS = {
             "heart_rate": "76",
             "spo2": "98",
             "blood_pressure": "122/78",
+            "patient_01_heart_rate": "76",
+            "patient_01_spo2": "98",
+            "patient_01_blood_pressure": "122/78",
             "fall_alert": "No fall",
             "panic_button": "Not pressed",
             "battery_status": "Normal",
@@ -141,6 +190,9 @@ SCENARIOS = {
             "heart_rate": "132",
             "spo2": "91",
             "blood_pressure": "176/110",
+            "patient_01_heart_rate": "132",
+            "patient_01_spo2": "91",
+            "patient_01_blood_pressure": "176/110",
             "fall_alert": "No fall",
             "panic_button": "Not pressed",
             "battery_status": "Normal",
@@ -188,11 +240,22 @@ def run_attack(args):
         raise SystemExit(f"Attack {args.attack} is not defined for scenario {scenario}.")
 
     payloads = profile[args.attack]
-    repeat_count = args.count if args.attack == "replay" else 1
-    for index in range(repeat_count):
-        if repeat_count > 1:
-            print(f"Replay {index + 1}/{repeat_count}")
+    if args.attack == "replay":
+        for index in range(args.count):
+            if args.count > 1:
+                print(f"Replay {index + 1}/{args.count}")
+            publish_payloads(args.host, args.port, topics, payloads, args.delay)
+        return
+
+    deadline = time.monotonic() + args.duration if args.duration > 0 else None
+    published = 0
+    while True:
+        published += 1
+        if published > 1:
+            print(f"Refresh {published}")
         publish_payloads(args.host, args.port, topics, payloads, args.delay)
+        if deadline is None or time.monotonic() >= deadline:
+            break
 
 
 def main():
@@ -203,12 +266,15 @@ def main():
     parser.add_argument("--port", type=int, default=1883)
     parser.add_argument("--count", type=int, default=5, help="Repeat count for replay/noise attacks.")
     parser.add_argument("--delay", type=float, default=0.5, help="Delay between publishes.")
+    parser.add_argument("--duration", type=float, default=10.0, help="Seconds to refresh non-replay attacks for dashboard visibility.")
     args = parser.parse_args()
 
     if args.count < 1:
         parser.error("--count must be at least 1")
     if args.delay < 0:
         parser.error("--delay must be zero or greater")
+    if args.duration < 0:
+        parser.error("--duration must be zero or greater")
 
     run_attack(args)
 

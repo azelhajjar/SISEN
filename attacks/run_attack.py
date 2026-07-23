@@ -7,6 +7,7 @@ leaving the scenario/lab lifecycle under the normal launcher scripts.
 """
 
 import argparse
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -400,6 +401,8 @@ def mqtt_command(item, args):
         str(args.count),
         "--delay",
         str(args.delay),
+        "--duration",
+        str(args.duration),
     ]
     return command
 
@@ -460,7 +463,9 @@ def run_selected_attack(args):
     print(f"Attack: {item['attack']}")
     print(f"Engine: {item['engine']}")
     print(f"+ {' '.join(command)}")
-    subprocess.run(command, check=False)
+    env = os.environ.copy()
+    env["SISEN_PYTHON"] = PYTHON
+    subprocess.run(command, check=False, env=env)
 
 
 def parse_args():
@@ -470,7 +475,7 @@ def parse_args():
     parser.add_argument("--scenario", help="Scenario name, for example building, medical, or 6lowpan.")
     parser.add_argument("--attack", help="Attack name within the selected category and scenario.")
     parser.add_argument("--target", default="room-101", help="Smart Building client-drop target.")
-    parser.add_argument("--duration", type=int, default=10, help="Infrastructure disruption duration in seconds.")
+    parser.add_argument("--duration", type=int, default=10, help="Infrastructure disruption or MQTT refresh duration in seconds.")
     parser.add_argument("--host", default="localhost", help="MQTT broker host.")
     parser.add_argument("--port", type=int, default=1883, help="MQTT broker port.")
     parser.add_argument("--count", type=int, default=5, help="Repeat count for replay/noise telemetry attacks.")

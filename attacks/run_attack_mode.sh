@@ -3,6 +3,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 POC_DIR="$REPO_ROOT/6lowpan"
+PYTHON="${SISEN_PYTHON:-python3}"
 
 AP_MODE=""
 KEEP_AP=0
@@ -145,6 +146,7 @@ fi
 
 echo "SISEN Milestone 9 mode: $mode"
 echo "PoC directory: $POC_DIR"
+echo "Python helper interpreter: $PYTHON"
 
 active_lab=0
 if ip netns list | grep -Eq '(^| )node1($| )' && ip netns list | grep -Eq '(^| )node2($| )' && ip netns list | grep -Eq '(^| )border($| )'; then
@@ -166,27 +168,27 @@ if [ "$active_lab" -eq 1 ] && [ -z "$interactive_arg" ]; then
   case "$mode" in
     spoof|spoofed)
       echo "Active full lab detected. Injecting spoofed telemetry without rebuilding topology."
-      sudo ip netns exec node1 python3 "$POC_DIR/attacks/send_attack.py" --attack spoof --source fd00:6:1::1 --dest fd00:6:3::2 --port 9999
+      sudo ip netns exec node1 "$PYTHON" "$POC_DIR/attacks/send_attack.py" --attack spoof --source fd00:6:1::1 --dest fd00:6:3::2 --port 9999
       exit 0
       ;;
     missing)
       echo "Active full lab detected. Injecting missing-telemetry activity without rebuilding topology."
-      sudo ip netns exec node1 python3 "$POC_DIR/attacks/send_attack.py" --attack missing --source fd00:6:1::1 --dest fd00:6:3::2 --port 9999
+      sudo ip netns exec node1 "$PYTHON" "$POC_DIR/attacks/send_attack.py" --attack missing --source fd00:6:1::1 --dest fd00:6:3::2 --port 9999
       exit 0
       ;;
     extreme)
       echo "Active full lab detected. Injecting extreme telemetry without rebuilding topology."
-      sudo ip netns exec node1 python3 "$POC_DIR/attacks/send_attack.py" --attack extreme --source fd00:6:1::1 --dest fd00:6:3::2 --port 9999
+      sudo ip netns exec node1 "$PYTHON" "$POC_DIR/attacks/send_attack.py" --attack extreme --source fd00:6:1::1 --dest fd00:6:3::2 --port 9999
       exit 0
       ;;
     replay)
       echo "Active full lab detected. Injecting replay telemetry without rebuilding topology."
-      sudo ip netns exec node1 python3 "$POC_DIR/attacks/send_attack.py" --attack replay --source fd00:6:1::1 --dest fd00:6:3::2 --port 9999
+      sudo ip netns exec node1 "$PYTHON" "$POC_DIR/attacks/send_attack.py" --attack replay --source fd00:6:1::1 --dest fd00:6:3::2 --port 9999
       exit 0
       ;;
     boiler-pressure-masked|emergency-stop-hidden|machine-overheat-hidden)
       echo "Active full lab detected. Injecting safety-case telemetry without rebuilding topology."
-      sudo ip netns exec node1 python3 "$POC_DIR/attacks/send_attack.py" --attack "$mode" --source fd00:6:1::1 --dest fd00:6:3::2 --port 9999
+      sudo ip netns exec node1 "$PYTHON" "$POC_DIR/attacks/send_attack.py" --attack "$mode" --source fd00:6:1::1 --dest fd00:6:3::2 --port 9999
       exit 0
       ;;
     normal)
