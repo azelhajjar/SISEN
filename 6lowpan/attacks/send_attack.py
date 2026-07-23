@@ -38,11 +38,11 @@ ASSETS = {
     },
 }
 ELIGIBLE_TARGETS = {
-    "spoof": ["node-03", "node-04"],
-    "replay": ["node-01", "node-03", "node-04"],
-    "extreme": ["node-01", "node-02", "node-04"],
-    "missing": ["node-01", "node-02", "node-03"],
-    "malformed": ["node-01", "node-03"],
+    "spoof": ["node-01", "node-02", "node-03", "node-04"],
+    "replay": ["node-01", "node-02", "node-03", "node-04"],
+    "extreme": ["node-01", "node-02", "node-03", "node-04"],
+    "missing": ["node-01", "node-02", "node-03", "node-04"],
+    "malformed": ["node-01", "node-02", "node-03", "node-04"],
     "boiler-pressure-masked": ["node-01"],
     "emergency-stop-hidden": ["node-01", "node-02"],
     "machine-overheat-hidden": ["node-02"],
@@ -90,17 +90,45 @@ def spoof_payloads(args):
     return target_payloads(
         args,
         {
+            "node-01": lambda: reading_for(
+                "node-01",
+                {
+                    "temperature": 27.4,
+                    "gas_leak": "Normal",
+                    "pressure_status": "Normal",
+                    "emergency_stop": "Ready",
+                },
+                "spoof",
+            ),
+            "node-02": lambda: reading_for(
+                "node-02",
+                {
+                    "temperature": 31.8,
+                    "humidity": 34.0,
+                    "machine_overheat": "Normal",
+                    "emergency_stop": "Ready",
+                },
+                "spoof",
+            ),
             "node-03": lambda: reading_for(
                 "node-03",
-                {"air_quality": 760.0, "occupancy": "Occupied", "temperature": 9.4},
+                {
+                    "temperature": 9.4,
+                    "humidity": 61.0,
+                    "occupancy": "Occupied",
+                    "air_quality": 760.0,
+                },
                 "spoof",
-                sensor_id="COLD-STORE-ROGUE",
             ),
             "node-04": lambda: reading_for(
                 "node-04",
-                {"air_quality": 760.0, "gas_leak": "Gas detected", "occupancy": "Occupied"},
+                {
+                    "temperature": 24.6,
+                    "gas_leak": "Gas detected",
+                    "occupancy": "Occupied",
+                    "air_quality": 760.0,
+                },
                 "spoof",
-                sensor_id="GAS-BAY-ROGUE",
             ),
         },
     )
@@ -117,6 +145,17 @@ def replay_payloads(args):
                     "temperature": 24.4,
                     "gas_leak": "Normal",
                     "pressure_status": "Normal",
+                    "emergency_stop": "Ready",
+                },
+                "replay",
+                timestamp=stale_time,
+            ),
+            "node-02": lambda: reading_for(
+                "node-02",
+                {
+                    "temperature": 29.6,
+                    "humidity": 42.0,
+                    "machine_overheat": "Normal",
                     "emergency_stop": "Ready",
                 },
                 "replay",
@@ -172,6 +211,16 @@ def extreme_payloads(args):
                 },
                 "false_extreme",
             ),
+            "node-03": lambda: reading_for(
+                "node-03",
+                {
+                    "temperature": -12.0,
+                    "humidity": 92.0,
+                    "occupancy": "Occupied",
+                    "air_quality": 1800.0,
+                },
+                "false_extreme",
+            ),
             "node-04": lambda: reading_for(
                 "node-04",
                 {
@@ -193,6 +242,7 @@ def missing_payloads(args):
             "node-01": lambda: reading_for("node-01", {"temperature": 22.8}, "missing_telemetry"),
             "node-02": lambda: reading_for("node-02", {"humidity": 48.6}, "missing_telemetry"),
             "node-03": lambda: reading_for("node-03", {"occupancy": "Occupied"}, "missing_telemetry"),
+            "node-04": lambda: reading_for("node-04", {"air_quality": 710.0}, "missing_telemetry"),
         },
     )
 
@@ -207,11 +257,23 @@ def malformed_payloads(args):
                 "malformed_protocol",
                 sensor_id="PROTO-BAD-01",
             ),
+            "node-02": lambda: reading_for(
+                "node-02",
+                {"humidity": "wet", "machine_overheat": "perhaps"},
+                "malformed_protocol",
+                sensor_id="PROTO-BAD-02",
+            ),
             "node-03": lambda: reading_for(
                 "node-03",
                 {"temperature": "not-a-temperature", "air_quality": "opaque"},
                 "malformed_protocol",
                 sensor_id="PROTO-BAD-03",
+            ),
+            "node-04": lambda: reading_for(
+                "node-04",
+                {"gas_leak": "???", "air_quality": "dense"},
+                "malformed_protocol",
+                sensor_id="PROTO-BAD-04",
             ),
         },
     )
@@ -269,7 +331,7 @@ def machine_overheat_hidden_payloads(args):
 ATTACKS = {
     "spoof": {
         "payloads": spoof_payloads,
-        "impact": "A fake sensor identity can influence dashboard temperature if the gateway trusts valid JSON only.",
+        "impact": "A plausible but false reading can influence dashboard state if the gateway trusts node telemetry.",
     },
     "replay": {
         "payloads": replay_payloads,
