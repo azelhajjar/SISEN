@@ -3,6 +3,8 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 POC_DIR="$REPO_ROOT/6lowpan"
+DEFAULT_ATTACK_DURATION=10
+DEFAULT_ATTACK_INTERVAL=0.5
 PROJECT_PYTHON="$REPO_ROOT/.venv/bin/python"
 if [ -n "${SISEN_PYTHON:-}" ]; then
   PYTHON="$SISEN_PYTHON"
@@ -25,8 +27,8 @@ usage() {
   cat >&2 <<'EOF'
 Usage: bash attacks/run_attack_mode.sh <normal|spoofed|spoof|missing|extreme|replay|malformed|boiler-pressure-masked|emergency-stop-hidden|machine-overheat-hidden> [--interactive] [--ap-mode <mode>] [--keep-ap]
 
-Runs a selected Milestone 9 mode using the existing 6LoWPAN PoC runner.
-The underlying topology and attack traffic remain implemented by 6lowpan/run_poc.sh.
+Runs a selected 6LoWPAN attack mode using the existing active lab when present.
+The underlying topology remains implemented by 6lowpan/run_poc.sh.
 
 AP modes reuse the existing AP scripts:
   open, wpa2, wpa2-enterprise
@@ -156,13 +158,13 @@ if [ ! -x "$POC_DIR/run_poc.sh" ]; then
   exit 1
 fi
 
-echo "SISEN Milestone 9 mode: $mode"
+echo "SISEN 6LoWPAN mode: $mode"
 echo "PoC directory: $POC_DIR"
 echo "Python helper interpreter: $PYTHON"
 
 active_lab=0
 if ip netns list | grep -Eq '(^| )node1($| )' && ip netns list | grep -Eq '(^| )node2($| )' && ip netns list | grep -Eq '(^| )border($| )'; then
-  echo "Detected existing Milestone 10 lab namespaces."
+  echo "Detected active 6LoWPAN lab namespaces."
   active_lab=1
 else
   echo "No existing node1 namespace detected. The PoC runner will create a clean topology."
@@ -170,7 +172,7 @@ fi
 
 echo
 echo "Useful MQTT observation commands:"
-echo "  mosquitto_sub -h localhost -p 1883 -t 'building/#' -v"
+echo "  mosquitto_sub -h localhost -p 1883 -t 'industrial/6lowpan/#' -v"
 echo "  mosquitto_sub -h fd00:6:2::1 -p 1884 -t '#' -v"
 echo
 
@@ -179,37 +181,37 @@ start_selected_ap
 if [ "$active_lab" -eq 1 ] && [ -z "$interactive_arg" ]; then
   case "$mode" in
     spoof|spoofed)
-      echo "Active full lab detected. Injecting spoofed telemetry without rebuilding topology."
-      sudo ip netns exec node1 "$PYTHON" "$POC_DIR/attacks/send_attack.py" --attack spoof --source fd00:6:1::1 --dest fd00:6:3::2 --port 9999
+      echo "Using active lab; injecting spoofed telemetry without rebuilding topology."
+      sudo ip netns exec node1 "$PYTHON" "$POC_DIR/attacks/send_attack.py" --attack spoof --source fd00:6:1::1 --dest fd00:6:3::2 --port 9999 --duration "$DEFAULT_ATTACK_DURATION" --interval "$DEFAULT_ATTACK_INTERVAL"
       exit 0
       ;;
     missing)
-      echo "Active full lab detected. Injecting missing-telemetry activity without rebuilding topology."
+      echo "Using active lab; injecting missing-telemetry activity without rebuilding topology."
       sudo ip netns exec node1 "$PYTHON" "$POC_DIR/attacks/send_attack.py" --attack missing --source fd00:6:1::1 --dest fd00:6:3::2 --port 9999
       exit 0
       ;;
     extreme)
-      echo "Active full lab detected. Injecting extreme telemetry without rebuilding topology."
-      sudo ip netns exec node1 "$PYTHON" "$POC_DIR/attacks/send_attack.py" --attack extreme --source fd00:6:1::1 --dest fd00:6:3::2 --port 9999
+      echo "Using active lab; injecting extreme telemetry without rebuilding topology."
+      sudo ip netns exec node1 "$PYTHON" "$POC_DIR/attacks/send_attack.py" --attack extreme --source fd00:6:1::1 --dest fd00:6:3::2 --port 9999 --duration "$DEFAULT_ATTACK_DURATION" --interval "$DEFAULT_ATTACK_INTERVAL"
       exit 0
       ;;
     replay)
-      echo "Active full lab detected. Injecting replay telemetry without rebuilding topology."
-      sudo ip netns exec node1 "$PYTHON" "$POC_DIR/attacks/send_attack.py" --attack replay --source fd00:6:1::1 --dest fd00:6:3::2 --port 9999
+      echo "Using active lab; injecting replay telemetry without rebuilding topology."
+      sudo ip netns exec node1 "$PYTHON" "$POC_DIR/attacks/send_attack.py" --attack replay --source fd00:6:1::1 --dest fd00:6:3::2 --port 9999 --count 5 --interval "$DEFAULT_ATTACK_INTERVAL"
       exit 0
       ;;
     malformed)
-      echo "Active full lab detected. Injecting malformed protocol telemetry without rebuilding topology."
-      sudo ip netns exec node1 "$PYTHON" "$POC_DIR/attacks/send_attack.py" --attack malformed --source fd00:6:1::1 --dest fd00:6:3::2 --port 9999
+      echo "Using active lab; injecting malformed protocol telemetry without rebuilding topology."
+      sudo ip netns exec node1 "$PYTHON" "$POC_DIR/attacks/send_attack.py" --attack malformed --source fd00:6:1::1 --dest fd00:6:3::2 --port 9999 --duration "$DEFAULT_ATTACK_DURATION" --interval "$DEFAULT_ATTACK_INTERVAL"
       exit 0
       ;;
     boiler-pressure-masked|emergency-stop-hidden|machine-overheat-hidden)
-      echo "Active full lab detected. Injecting safety-case telemetry without rebuilding topology."
-      sudo ip netns exec node1 "$PYTHON" "$POC_DIR/attacks/send_attack.py" --attack "$mode" --source fd00:6:1::1 --dest fd00:6:3::2 --port 9999
+      echo "Using active lab; injecting safety-case telemetry without rebuilding topology."
+      sudo ip netns exec node1 "$PYTHON" "$POC_DIR/attacks/send_attack.py" --attack "$mode" --source fd00:6:1::1 --dest fd00:6:3::2 --port 9999 --duration "$DEFAULT_ATTACK_DURATION" --interval "$DEFAULT_ATTACK_INTERVAL"
       exit 0
       ;;
     normal)
-      echo "Active full lab detected. Normal telemetry is already running."
+      echo "Active 6LoWPAN lab detected. Normal telemetry is already running."
       exit 0
       ;;
   esac

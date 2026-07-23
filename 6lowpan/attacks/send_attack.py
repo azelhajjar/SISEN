@@ -5,6 +5,16 @@ import socket
 import time
 from datetime import datetime, timezone
 
+REFRESH_ATTACKS = {
+    "spoof",
+    "extreme",
+    "malformed",
+    "boiler-pressure-masked",
+    "emergency-stop-hidden",
+    "machine-overheat-hidden",
+}
+METADATA_FIELDS = {"sensor_id", "node_id", "label", "unit", "timestamp", "attack"}
+
 
 def utc_now():
     return datetime.now(timezone.utc).isoformat()
@@ -192,36 +202,100 @@ ATTACKS = {
 }
 
 
+def display_attack_name(attack_name):
+    if attack_name == "spoof":
+        return "spoofed"
+    return attack_name
+
+
+def attack_target(payloads):
+    targets = []
+    for reading in payloads:
+        node_id = reading.get("node_id", "unknown-node")
+        label = reading.get("label", reading.get("sensor_id", "unknown sensor"))
+        target = f"{label} ({node_id})"
+        if target not in targets:
+            targets.append(target)
+    return targets[0] if len(targets) == 1 else ", ".join(targets)
+
+
+def changed_fields(reading):
+    return sorted(set(reading) - METADATA_FIELDS)
+
+
+def print_reading_summary(reading):
+    node_id = reading.get("node_id", "unknown-node")
+    label = reading.get("label", reading.get("sensor_id", "unknown sensor"))
+    print(f"{label} ({node_id}):", flush=True)
+    for field in changed_fields(reading):
+        print(f"  {field} <- {reading[field]}", flush=True)
+
+
+def send_payloads(sock, dest, port, payloads):
+    for reading in payloads:
+        payload = json.dumps(reading, separators=(",", ":")).encode("utf-8")
+        sock.sendto(payload, (dest, port))
+        print_reading_summary(reading)
+
+
 def main():
-    parser = argparse.ArgumentParser(description="Send controlled Milestone 6 attack telemetry over UDP/IPv6.")
+    parser = argparse.ArgumentParser(description="Send controlled SISEN 6LoWPAN attack telemetry over UDP/IPv6.")
     parser.add_argument("--attack", required=True, choices=sorted(ATTACKS), help="Attack activity to run.")
     parser.add_argument("--source", default=None, help="Optional source IPv6 address to bind.")
     parser.add_argument("--dest", required=True, help="Destination IPv6 address.")
     parser.add_argument("--port", type=int, default=9999, help="Destination UDP port.")
     parser.add_argument("--interval", type=float, default=0.5, help="Seconds between payloads.")
+    parser.add_argument("--duration", type=float, default=10.0, help="Seconds to refresh applicable attacks.")
+    parser.add_argument("--count", type=int, default=5, help="Repeat count for replay attacks.")
     args = parser.parse_args()
+
+    if args.interval <= 0:
+        parser.error("--interval must be greater than zero")
+    if args.duration < 0:
+        parser.error("--duration must be zero or greater")
+    if args.count < 1:
+        parser.error("--count must be at least 1")
 
     attack = ATTACKS[args.attack]
     payloads = attack["payloads"]()
+    refresh_attack = args.attack in REFRESH_ATTACKS
 
-    print(f"attack activity: {args.attack}", flush=True)
-    print(f"expected impact: {attack['impact']}", flush=True)
+    print(f"SISEN 6LoWPAN attack demo: {display_attack_name(args.attack)}", flush=True)
+    print("Scenario: 6lowpan", flush=True)
+    print(f"Target: {attack_target(payloads)}", flush=True)
+    print(f"Purpose: {attack['impact']}", flush=True)
+    print(flush=True)
 
     sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
     if args.source:
         sock.bind((args.source, 0))
 
-    for index, reading in enumerate(payloads, start=1):
-        payload = json.dumps(reading, separators=(",", ":")).encode("utf-8")
-        sock.sendto(payload, (args.dest, args.port))
-        node_id = reading.get("node_id", "unknown-node")
-        label = reading.get("label", reading.get("sensor_id", "unknown sensor"))
-        changed_fields = sorted(set(reading) - {"sensor_id", "node_id", "label", "unit", "timestamp", "attack"})
-        summary = ", ".join(f"{field} <- {reading[field]}" for field in changed_fields)
-        print(f"{label} ({node_id}): {summary}", flush=True)
-        print(f"sent attack reading {index}/{len(payloads)}: {json.dumps(reading)}", flush=True)
-        if index < len(payloads):
-            time.sleep(args.interval)
+    started = time.monotonic()
+    publication = 0
+    while True:
+        publication += 1
+        if publication > 1:
+            print(flush=True)
+            print(f"Refresh {publication}", flush=True)
+        send_payloads(sock, args.dest, args.port, payloads)
+
+        if args.attack == "replay":
+            if publication >= args.count:
+                break
+        elif refresh_attack:
+            if time.monotonic() - started >= args.duration:
+                break
+        else:
+            break
+
+        time.sleep(args.interval)
+
+    print(flush=True)
+    if refresh_attack:
+        print(f"Attack completed after {args.duration:g} seconds.", flush=True)
+    else:
+        print(f"Attack completed after {publication} publication(s).", flush=True)
+    print("Normal telemetry will now resume.", flush=True)
 
 
 if __name__ == "__main__":
