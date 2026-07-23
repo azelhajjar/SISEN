@@ -125,7 +125,8 @@ Scenario-specific subscriptions:
 ```bash
 mosquitto_sub -h localhost -v -t 'building/#'
 mosquitto_sub -h localhost -v -t 'patient/#'
-mosquitto_sub -h localhost -v -t 'industrial/6lowpan/#'
+mosquitto_sub -h localhost -p 1883 -t 'industrial/6lowpan/#' -v
+mosquitto_sub -h fd00:6:2::1 -p 1884 -t '#' -v
 ```
 
 If no messages arrive:

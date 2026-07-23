@@ -132,8 +132,8 @@ sudo tcpdump -i any -n -vv -s 0 -Z "$USER" -w captures/6lowpan-mqtt-dashboard.pc
 MQTT observation:
 
 ```bash
-mosquitto_sub -h localhost -v -t 'industrial/6lowpan/temp-01/telemetry'
-mosquitto_sub -h localhost -v -t 'industrial/6lowpan/#'
+mosquitto_sub -h localhost -p 1883 -t 'industrial/6lowpan/#' -v
+mosquitto_sub -h fd00:6:2::1 -p 1884 -t '#' -v
 ```
 
 ## MQTT Capture

@@ -81,7 +81,8 @@ The dashboard shows:
 Subscribe to all 6LoWPAN dashboard telemetry:
 
 ```bash
-mosquitto_sub -h localhost -v -t 'industrial/6lowpan/#'
+mosquitto_sub -h localhost -p 1883 -t 'industrial/6lowpan/#' -v
+mosquitto_sub -h fd00:6:2::1 -p 1884 -t '#' -v
 ```
 
 Common topics include:
@@ -108,6 +109,27 @@ python3 attacks/run_attack.py --category protocol --scenario 6lowpan --attack mi
 python3 attacks/run_attack.py --category protocol --scenario 6lowpan --attack replay
 ```
 
+When the scenario is already running, these helpers inject through the active
+6LoWPAN lab namespace path rather than rebuilding the topology. Applicable
+attacks refresh the selected injected payload for about 10 seconds at 0.5
+second intervals; replay remains count-based. Normal telemetry continues during
+the attack and should restore the dashboard after the helper exits.
+
+The general attacks `spoofed`, `extreme`, `replay`, `missing`, and `malformed`
+support all four active industrial assets when `--nodes 4` is used:
+
+| Node | Asset | Fields |
+| --- | --- | --- |
+| `node-01` | Boiler Room | `temperature`, `gas_leak`, `pressure_status`, `emergency_stop` |
+| `node-02` | Process Line | `temperature`, `humidity`, `machine_overheat`, `emergency_stop` |
+| `node-03` | Cold Storage | `temperature`, `humidity`, `occupancy`, `air_quality` |
+| `node-04` | Loading Bay | `temperature`, `gas_leak`, `occupancy`, `air_quality` |
+
+Each run selects one eligible target, keeps it fixed for the full run, and uses
+a node-specific valid payload. Repeated runs use a shuffled rotation so all
+eligible nodes are used before reshuffling and immediate repeats are avoided
+when alternatives exist.
+
 Scenario-focused safety cases:
 
 ```bash
@@ -115,6 +137,11 @@ python3 attacks/run_attack.py --category safety-case --scenario 6lowpan --attack
 python3 attacks/run_attack.py --category safety-case --scenario 6lowpan --attack emergency-stop-hidden
 python3 attacks/run_attack.py --category safety-case --scenario 6lowpan --attack machine-overheat-hidden
 ```
+
+Safety-case attacks remain constrained to the assets where the safety condition
+is meaningful: `boiler-pressure-masked` targets Boiler Room only,
+`emergency-stop-hidden` targets Boiler Room or Process Line, and
+`machine-overheat-hidden` targets Process Line only.
 
 ## Captures To Collect
 

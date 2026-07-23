@@ -123,6 +123,12 @@ sudo python3 attacks/run_attack.py --category availability --scenario building -
 sudo python3 attacks/run_attack.py --category availability --scenario building --attack sensor-blackout --duration 10
 ```
 
+MQTT-based Smart Building attacks publish to the dashboard-consumed room and
+node topics. Applicable attacks refresh their injected values for about 10
+seconds at 0.5 second intervals so the effect remains visible, then exit.
+Normal telemetry continues during the attack and should restore the dashboard
+after the helper finishes.
+
 Scenario-focused safety cases:
 
 ```bash

@@ -56,6 +56,8 @@ open, hidden, wep, wpa2
 ```
 
 The launcher accepts between 1 and 10 patients/wearables. The default is 1.
+The standard four-patient lab uses `patient-1`, `patient-2`, `patient-3`, and
+`patient-4`.
 
 ## Dashboard View
 
@@ -98,6 +100,9 @@ patient/patient-1/alerts/wearable_link
 patient/patient-1/meta/ble_address
 ```
 
+Additional patients use the same non-zero-padded identifier pattern, for
+example `patient/patient-2/vitals/heart_rate`.
+
 ## Attacks To Try
 
 List attacks:
@@ -114,6 +119,12 @@ python3 attacks/run_attack.py --category integrity --scenario medical --attack e
 python3 attacks/run_attack.py --category integrity --scenario medical --attack malformed
 python3 attacks/run_attack.py --category replay --scenario medical --attack replay
 ```
+
+Medical attacks use the active patient identifiers and dashboard-consumed MQTT
+paths. Applicable attacks refresh their injected values for about 10 seconds at
+0.5 second intervals so the effect is visible, then exit. Normal patient
+telemetry continues during the attack and should restore the dashboard after
+the helper finishes.
 
 Scenario-focused safety cases:
 
